@@ -72,3 +72,35 @@ export interface CompleteReconciliationResponse {
   };
   message?: string;
 }
+
+/**
+ * Per-order Shiprocket cut item
+ */
+export interface ShiprocketCutItem {
+  order_id: string;
+  awb: string;
+  shiprocket_shipment_id: string;
+  order_amount: number;
+  total_remitted: number;
+  total_charges: number;
+  shiprocket_cut: number;
+  shipment_status: string;
+  has_statement_data: string;
+  transaction_count: number;
+  shipment_date: string;
+}
+
+/**
+ * Response type for paginated Shiprocket cuts endpoint (/api/reconcile/shiprocket-cuts?page=X)
+ */
+export interface PaginatedShiprocketCutsResponse {
+  status: "success" | "error";
+  items: ShiprocketCutItem[];
+  page: number;
+  perPage: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  timestamp: string;
+  message?: string;
+}

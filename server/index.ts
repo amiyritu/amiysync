@@ -6,6 +6,7 @@ import { handleHealthCheck } from "./routes/health-check";
 import { handleReconcile } from "./routes/reconcile";
 import { handleShopifyPaginated } from "./routes/shopify-paginated";
 import { handleShiprocketPaginated } from "./routes/shiprocket-paginated";
+import { handleShiprocketCutsPaginated } from "./routes/shiprocket-cuts-paginated";
 import { handleComplete } from "./routes/complete";
 import { handleDiagnostic } from "./routes/diagnostic";
 
@@ -40,6 +41,7 @@ export function createServer() {
   // Paginated reconciliation endpoints
   app.get("/api/reconcile/shopify", handleShopifyPaginated);
   app.get("/api/reconcile/shiprocket", handleShiprocketPaginated);
+  app.get("/api/reconcile/shiprocket-cuts", handleShiprocketCutsPaginated);
   app.post("/api/reconcile/complete", handleComplete);
 
   return app;

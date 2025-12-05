@@ -4,11 +4,13 @@ import {
   ReconciliationResponse,
   PaginatedShopifyResponse,
   PaginatedShiprocketResponse,
+  PaginatedShiprocketCutsResponse,
   CompleteReconciliationResponse,
 } from "@shared/api";
 import { ApiHealthCheck } from "../components/ApiHealthCheck";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { PaginatedResults } from "../components/PaginatedResults";
+import { ShiprocketCutsTable } from "../components/ShiprocketCutsTable";
 
 interface ProgressStep {
   label: string;
@@ -44,12 +46,18 @@ export default function Index() {
   const [shiprocketTotalItems, setShiprocketTotalItems] = useState(0);
   const [shiprocketLoading, setShiprocketLoading] = useState(false);
 
+  const [shiprocketCutsResults, setShiprocketCutsResults] = useState<any[]>([]);
+  const [shiprocketCutsPage, setShiprocketCutsPage] = useState(1);
+  const [shiprocketCutsTotalPages, setShiprocketCutsTotalPages] = useState(0);
+  const [shiprocketCutsTotalItems, setShiprocketCutsTotalItems] = useState(0);
+  const [shiprocketCutsLoading, setShiprocketCutsLoading] = useState(false);
+
   // Progress tracking state
   const [progressSteps, setProgressSteps] = useState<ProgressStep[]>([
-    { label: "Fetching Shopify orders", status: "pending" },
-    { label: "Fetching Shiprocket settlements", status: "pending" },
-    { label: "Merging datasets", status: "pending" },
-    { label: "Writing to Google Sheets", status: "pending" },
+    { label: "Running reconciliation", status: "pending" },
+    { label: "Loading Shopify Orders", status: "pending" },
+    { label: "Loading Shiprocket Settlements", status: "pending" },
+    { label: "Loading Shiprocket Cuts", status: "pending" },
   ]);
   const [isReconciling, setIsReconciling] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
@@ -58,7 +66,13 @@ export default function Index() {
   const fetchShopifyPage = async (page: number) => {
     try {
       setShopifyLoading(true);
-      const response = await fetch(`/api/reconcile/shopify?page=${page}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
+      const response = await fetch(`/api/reconcile/shopify?page=${page}`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -73,9 +87,11 @@ export default function Index() {
         setShopifyTotalItems(data.totalItems);
       } else {
         console.error("Shopify API error:", data.message);
+        throw new Error(data.message || "Shopify API returned an error");
       }
     } catch (error) {
       console.error("Error fetching Shopify page:", error);
+      throw error;
     } finally {
       setShopifyLoading(false);
     }
@@ -85,7 +101,13 @@ export default function Index() {
   const fetchShiprocketPage = async (page: number) => {
     try {
       setShiprocketLoading(true);
-      const response = await fetch(`/api/reconcile/shiprocket?page=${page}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
+      const response = await fetch(`/api/reconcile/shiprocket?page=${page}`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -100,11 +122,51 @@ export default function Index() {
         setShiprocketTotalItems(data.totalItems);
       } else {
         console.error("Shiprocket API error:", data.message);
+        throw new Error(data.message || "Shiprocket API returned an error");
       }
     } catch (error) {
       console.error("Error fetching Shiprocket page:", error);
+      throw error;
     } finally {
       setShiprocketLoading(false);
+    }
+  };
+
+  // Fetch paginated Shiprocket cuts results
+  const fetchShiprocketCutsPage = async (page: number) => {
+    try {
+      setShiprocketCutsLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
+      const response = await fetch(
+        `/api/reconcile/shiprocket-cuts?page=${page}`,
+        { signal: controller.signal },
+      );
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: PaginatedShiprocketCutsResponse = await response.json();
+
+      if (data.status === "success") {
+        setShiprocketCutsResults(data.items);
+        setShiprocketCutsPage(data.page);
+        setShiprocketCutsTotalPages(data.totalPages);
+        setShiprocketCutsTotalItems(data.totalItems);
+      } else {
+        console.error("Shiprocket Cuts API error:", data.message);
+        throw new Error(
+          data.message || "Shiprocket Cuts API returned an error",
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching Shiprocket Cuts page:", error);
+      throw error;
+    } finally {
+      setShiprocketCutsLoading(false);
     }
   };
 
@@ -115,19 +177,8 @@ export default function Index() {
       setReconcileError(null);
       resetProgressSteps();
 
-      // Step 1: Shopify orders
+      // Step 1: Main reconciliation (Merge and write)
       updateProgressStep(0, "in-progress");
-      await fetchShopifyPage(1);
-      updateProgressStep(0, "completed");
-
-      // Step 2: Shiprocket settlements
-      updateProgressStep(1, "in-progress");
-      await fetchShiprocketPage(1);
-      updateProgressStep(1, "completed");
-
-      // Step 3 & 4: Merge and write
-      updateProgressStep(2, "in-progress");
-      updateProgressStep(3, "in-progress");
 
       const response = await fetch("/api/reconcile/complete", {
         method: "POST",
@@ -143,8 +194,7 @@ export default function Index() {
       const data: CompleteReconciliationResponse = await response.json();
 
       if (data.status === "success") {
-        updateProgressStep(2, "completed");
-        updateProgressStep(3, "completed");
+        updateProgressStep(0, "completed");
         setReconciliationStatus({
           status: "success",
           timestamp: data.timestamp,
@@ -156,7 +206,45 @@ export default function Index() {
         if (data.reconciliationStats) {
           setReconciliationStats(data.reconciliationStats);
         }
+
         setLastUpdated(new Date());
+
+        // Fetch data for display (non-blocking, happens after reconciliation succeeds)
+        updateProgressStep(1, "in-progress");
+        try {
+          await fetchShopifyPage(1);
+          updateProgressStep(1, "completed");
+        } catch (err) {
+          console.warn(
+            "Non-blocking: Failed to fetch Shopify data for display",
+            err,
+          );
+          updateProgressStep(1, "completed");
+        }
+
+        updateProgressStep(2, "in-progress");
+        try {
+          await fetchShiprocketPage(1);
+          updateProgressStep(2, "completed");
+        } catch (err) {
+          console.warn(
+            "Non-blocking: Failed to fetch Shiprocket data for display",
+            err,
+          );
+          updateProgressStep(2, "completed");
+        }
+
+        updateProgressStep(3, "in-progress");
+        try {
+          await fetchShiprocketCutsPage(1);
+          updateProgressStep(3, "completed");
+        } catch (err) {
+          console.warn(
+            "Non-blocking: Failed to fetch Shiprocket cuts for display",
+            err,
+          );
+          updateProgressStep(3, "completed");
+        }
       } else {
         throw new Error(data.message || "Reconciliation failed");
       }
@@ -232,10 +320,10 @@ export default function Index() {
 
   const resetProgressSteps = () => {
     setProgressSteps([
-      { label: "Fetching Shopify orders", status: "pending" },
-      { label: "Fetching Shiprocket settlements", status: "pending" },
-      { label: "Merging datasets", status: "pending" },
-      { label: "Writing to Google Sheets", status: "pending" },
+      { label: "Running reconciliation", status: "pending" },
+      { label: "Loading Shopify Orders", status: "pending" },
+      { label: "Loading Shiprocket Settlements", status: "pending" },
+      { label: "Loading Shiprocket Cuts", status: "pending" },
     ]);
   };
 
@@ -505,6 +593,26 @@ export default function Index() {
           />
         </div>
 
+        {/* Shiprocket Cuts Table */}
+        <div className="mb-8">
+          <ShiprocketCutsTable
+            items={shiprocketCutsResults}
+            page={shiprocketCutsPage}
+            totalPages={shiprocketCutsTotalPages}
+            totalItems={shiprocketCutsTotalItems}
+            perPage={50}
+            onPrevPage={() => {
+              if (shiprocketCutsPage > 1)
+                fetchShiprocketCutsPage(shiprocketCutsPage - 1);
+            }}
+            onNextPage={() => {
+              if (shiprocketCutsPage < shiprocketCutsTotalPages)
+                fetchShiprocketCutsPage(shiprocketCutsPage + 1);
+            }}
+            isLoading={shiprocketCutsLoading}
+          />
+        </div>
+
         {/* Information Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Scheduled Runs */}
@@ -538,12 +646,13 @@ export default function Index() {
               Results Location
             </h3>
             <p className="text-slate-300 text-sm">
-              All reconciliation results are written to a Google Sheet with
-              three tabs:
+              All reconciliation results are written to a Google Sheet with four
+              tabs:
             </p>
             <ul className="text-slate-200 text-sm font-mono space-y-1 ml-4 mt-3 list-disc">
               <li>Shopify_Orders</li>
               <li>Shiprocket_Settlements</li>
+              <li>Shiprocket_Cuts</li>
               <li>Reconciliation</li>
             </ul>
           </div>
