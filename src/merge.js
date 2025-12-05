@@ -1,73 +1,168 @@
 /**
- * Merges Shopify orders with Shiprocket settlements to create reconciliation rows
+ * Determines the reconciliation status based on order type and settlement match
+ * @param {boolean} isCod - Whether the order is COD
+ * @param {boolean} hasSettlement - Whether there's a settlement record
+ * @param {number} difference - Difference between Shopify total and Shiprocket net
+ * @returns {string} Reconciliation status
+ */
+function determineStatus(isCod, hasSettlement, difference) {
+  if (!isCod) {
+    return "Prepaid - No Remittance";
+  }
+
+  if (!hasSettlement) {
+    return "Pending Remittance";
+  }
+
+  // For COD orders with settlements, check if amounts match (tolerance: $0.50)
+  if (Math.abs(difference) < 0.5) {
+    return "Reconciled";
+  }
+
+  return "Mismatch";
+}
+
+/**
+ * Merges Shopify orders with Shiprocket settlements to create detailed reconciliation rows
+ * Handles both COD and prepaid orders, with per-order settlement details
  * @param {Array<Array>} shopifyRows - Array of Shopify order rows
+ *   Format: [order_id, order_date, customer_name, payment_method, order_total, financial_status, fulfillment_status, cod_prepaid]
  * @param {Array<Array>} shiprocketRows - Array of Shiprocket settlement rows
+ *   Format: [order_id, awb, order_amount, shipping_charges, cod_charges, adjustments, rto_reversal, net_settlement, remittance_date, batch_id]
  * @returns {Array<Array>} Array of reconciliation rows
  */
 export function mergeDatasets(shopifyRows, shiprocketRows) {
   console.log(
-    `[Merge] Starting reconciliation with ${shopifyRows.length} Shopify orders and ${shiprocketRows.length} Shiprocket rows`,
+    `[Merge] Starting reconciliation with ${shopifyRows.length} Shopify orders and ${shiprocketRows.length} Shiprocket settlement rows`,
   );
 
   // Build a map of Shiprocket settlements keyed by order_id
+  // Uses a Map to handle multiple entries per order (keeps the latest)
   const shiprocketMap = new Map();
   shiprocketRows.forEach((row) => {
-    const orderId = String(row[0]); // order_id is first column
-    // Use the last occurrence if there are duplicates
-    shiprocketMap.set(orderId, row);
+    const orderId = String(row[0]).trim(); // order_id (column 0)
+    if (orderId) {
+      // Log if we're replacing a previous entry
+      if (shiprocketMap.has(orderId)) {
+        console.log(
+          `[Merge] Multiple settlements found for order ${orderId}, using most recent`,
+        );
+      }
+      shiprocketMap.set(orderId, row);
+    }
   });
 
   console.log(
-    `[Merge] Built Shiprocket map with ${shiprocketMap.size} unique order IDs`,
+    `[Merge] Built Shiprocket settlement map with ${shiprocketMap.size} unique order IDs`,
   );
 
   // Reconcile each Shopify order with Shiprocket data
   const reconciliation = [];
+  const stats = {
+    totalOrders: shopifyRows.length,
+    cod: 0,
+    prepaid: 0,
+    reconciled: 0,
+    mismatches: 0,
+    pendingRemittance: 0,
+    prepaidNoRemittance: 0,
+  };
 
   shopifyRows.forEach((orderRow) => {
-    const orderIdString = String(orderRow[0]); // order_id
-    const shopifyTotal = parseFloat(orderRow[4]) || 0; // order_total
+    try {
+      const orderIdString = String(orderRow[0]).trim(); // order_id (column 0)
+      const orderDate = orderRow[1] || ""; // order_date (column 1)
+      const paymentMethod = orderRow[3] || ""; // payment_method (column 3)
+      const codPrepaidStatus = orderRow[7] || "Unknown"; // cod_prepaid (column 7)
+      const shopifyTotal = parseFloat(orderRow[4]) || 0; // order_total (column 4)
 
-    const sr = shiprocketMap.get(orderIdString);
-    const shiprocketNet = sr ? parseFloat(sr[7]) || 0 : 0; // net_remitted (column 8 in 1-indexed, column 7 in 0-indexed)
+      // Determine if this is a COD order
+      const isCod =
+        codPrepaidStatus.toUpperCase() === "COD" ||
+        paymentMethod.toLowerCase().includes("cod");
 
-    const diff = shopifyTotal - shiprocketNet;
+      if (isCod) {
+        stats.cod++;
+      } else {
+        stats.prepaid++;
+      }
 
-    let status;
-    if (!sr) {
-      status = "Pending Remittance";
-    } else if (Math.abs(diff) < 0.5) {
-      status = "Reconciled";
-    } else {
-      status = "Mismatch";
+      // Look up settlement data
+      const settlement = shiprocketMap.get(orderIdString);
+      const hasSettlement = !!settlement;
+
+      // Extract settlement details if available
+      let shiprocketNet = 0;
+      let awb = "";
+      let shippingCharges = 0;
+      let codCharges = 0;
+      let adjustments = 0;
+      let rtoReversal = 0;
+      let remittanceDate = "";
+      let batchId = "";
+
+      if (settlement) {
+        shiprocketNet = parseFloat(settlement[7]) || 0; // net_settlement (column 7)
+        awb = settlement[1] || ""; // awb (column 1)
+        shippingCharges = parseFloat(settlement[3]) || 0; // shipping_charges (column 3)
+        codCharges = parseFloat(settlement[4]) || 0; // cod_charges (column 4)
+        adjustments = parseFloat(settlement[5]) || 0; // adjustments (column 5)
+        rtoReversal = parseFloat(settlement[6]) || 0; // rto_reversal (column 6)
+        remittanceDate = settlement[8] || ""; // remittance_date (column 8)
+        batchId = settlement[9] || ""; // batch_id (column 9)
+      }
+
+      const difference = shopifyTotal - shiprocketNet;
+      const status = determineStatus(isCod, hasSettlement, difference);
+
+      // Track statistics
+      if (status === "Reconciled") {
+        stats.reconciled++;
+      } else if (status === "Mismatch") {
+        stats.mismatches++;
+      } else if (status === "Pending Remittance") {
+        stats.pendingRemittance++;
+      } else if (status === "Prepaid - No Remittance") {
+        stats.prepaidNoRemittance++;
+      }
+
+      // Build detailed reconciliation row
+      const reconciliationRow = [
+        orderIdString, // order_id
+        orderDate, // order_date
+        shopifyTotal, // shopify_order_total
+        shiprocketNet, // shiprocket_net_received
+        difference, // difference (Shopify - Shiprocket)
+        codPrepaidStatus, // cod_prepaid
+        status, // status
+        awb, // awb
+        shippingCharges, // shipping_charges
+        codCharges, // cod_charges
+        adjustments, // adjustments
+        rtoReversal, // rto_reversal
+        remittanceDate, // remittance_date
+        batchId, // batch_id
+        "", // notes (empty for manual entry)
+      ];
+
+      reconciliation.push(reconciliationRow);
+    } catch (error) {
+      console.error(
+        `[Merge] Error processing order ${orderRow[0]}:`,
+        error.message,
+      );
     }
-
-    const reconciliationRow = [
-      orderIdString, // order_id
-      shopifyTotal, // shopify_order_total
-      shiprocketNet, // shiprocket_net_received
-      diff, // difference
-      status, // status
-      "", // notes (empty for manual entry)
-    ];
-
-    reconciliation.push(reconciliationRow);
   });
 
-  console.log(
-    `[Merge] Reconciliation complete: ${reconciliation.length} rows generated`,
-  );
-
-  // Log summary statistics
-  const reconciled = reconciliation.filter((r) => r[4] === "Reconciled").length;
-  const mismatches = reconciliation.filter((r) => r[4] === "Mismatch").length;
-  const pending = reconciliation.filter(
-    (r) => r[4] === "Pending Remittance",
-  ).length;
-
-  console.log(
-    `[Merge] Summary - Reconciled: ${reconciled}, Mismatches: ${mismatches}, Pending: ${pending}`,
-  );
+  console.log(`[Merge] Reconciliation complete: ${reconciliation.length} rows generated`);
+  console.log("[Merge] Summary Statistics:");
+  console.log(`  - Total Orders: ${stats.totalOrders}`);
+  console.log(`  - COD Orders: ${stats.cod}`);
+  console.log(`  - Prepaid Orders: ${stats.prepaid}`);
+  console.log(`  - Reconciled (COD): ${stats.reconciled}`);
+  console.log(`  - Mismatches (COD): ${stats.mismatches}`);
+  console.log(`  - Pending Remittance (COD): ${stats.pendingRemittance}`);
+  console.log(`  - Prepaid - No Remittance: ${stats.prepaidNoRemittance}`);
 
   return reconciliation;
 }
