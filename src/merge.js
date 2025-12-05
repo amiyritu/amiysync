@@ -1,5 +1,6 @@
 /**
  * Determines the reconciliation status based on order type and settlement match
+ * Tolerance set to $0.50 to account for rounding differences and minor discrepancies
  * @param {boolean} isCod - Whether the order is COD
  * @param {boolean} hasSettlement - Whether there's a settlement record
  * @param {number} difference - Difference between Shopify total and Shiprocket net
@@ -11,11 +12,15 @@ function determineStatus(isCod, hasSettlement, difference) {
     return isCod ? "Pending Remittance" : "Prepaid - No Remittance";
   }
 
-  // For orders with settlements, check if amounts match (tolerance: $0.50)
-  if (Math.abs(difference) < 0.5) {
+  // For orders with settlements, check if amounts match
+  // Tolerance: $0.50 to account for rounding, currency conversion, or minor adjustments
+  const tolerance = 0.5;
+
+  if (Math.abs(difference) <= tolerance) {
     return "Reconciled";
   }
 
+  // If difference is significant, mark as mismatch for manual review
   return "Mismatch";
 }
 
@@ -240,6 +245,10 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         stats.prepaidNoRemittance++;
       }
 
+      // Calculate total deductions (sum of all charges deducted by Shiprocket)
+      const totalDeductions =
+        shippingCharges + codCharges + adjustments + rtoReversal;
+
       // Build detailed reconciliation row with all matching keys and settlement details
       const reconciliationRow = [
         orderIdString, // order_id (Shopify)
@@ -247,7 +256,8 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         orderDate, // order_date
         shopifyTotal, // shopify_order_total
         shiprocketNet, // shiprocket_net_received
-        difference, // difference (Shopify - Shiprocket)
+        totalDeductions, // total_deductions (sum of all charges)
+        difference, // difference (Shopify - Shiprocket, should equal totalDeductions for COD)
         codPrepaidStatus, // cod_prepaid
         status, // status (Reconciled, Mismatch, Pending, Prepaid)
         matchMethod, // match_method (cef_id, order_id, ute, or none)

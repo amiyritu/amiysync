@@ -64,5 +64,11 @@ export interface CompleteReconciliationResponse {
   shopifyOrders?: number;
   shiprocketRows?: number;
   reconciledRows?: number;
+  reconciliationStats?: {
+    reconciled: number;
+    mismatch: number;
+    pendingRemittance: number;
+    prepaidNoRemittance: number;
+  };
   message?: string;
 }

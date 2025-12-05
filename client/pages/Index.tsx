@@ -15,9 +15,18 @@ interface ProgressStep {
   status: "pending" | "in-progress" | "completed" | "error";
 }
 
+interface ReconciliationStats {
+  reconciled: number;
+  mismatch: number;
+  pendingRemittance: number;
+  prepaidNoRemittance: number;
+}
+
 export default function Index() {
   const [reconciliationStatus, setReconciliationStatus] =
     useState<ReconciliationResponse | null>(null);
+  const [reconciliationStats, setReconciliationStats] =
+    useState<ReconciliationStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
@@ -144,6 +153,9 @@ export default function Index() {
           shiprocketRows: data.shiprocketRows,
           reconciledRows: data.reconciledRows,
         });
+        if (data.reconciliationStats) {
+          setReconciliationStats(data.reconciliationStats);
+        }
         setLastUpdated(new Date());
       } else {
         throw new Error(data.message || "Reconciliation failed");
@@ -338,6 +350,47 @@ export default function Index() {
                   <p className="text-3xl font-bold text-slate-900 mt-1">
                     {reconciliationStatus.reconciledRows}
                   </p>
+                </div>
+              </div>
+            )}
+
+          {reconciliationStats &&
+            reconciliationStatus?.status === "success" && (
+              <div className="mt-6 pt-6 border-t border-slate-300 border-opacity-30">
+                <p className="text-sm font-medium text-slate-700 mb-4">
+                  Reconciliation Status Breakdown
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-green-100 bg-opacity-50 rounded-lg p-3">
+                    <p className="text-xs font-medium text-green-900">
+                      Reconciled
+                    </p>
+                    <p className="text-2xl font-bold text-green-900 mt-1">
+                      {reconciliationStats.reconciled}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-100 bg-opacity-50 rounded-lg p-3">
+                    <p className="text-xs font-medium text-yellow-900">
+                      Mismatches
+                    </p>
+                    <p className="text-2xl font-bold text-yellow-900 mt-1">
+                      {reconciliationStats.mismatch}
+                    </p>
+                  </div>
+                  <div className="bg-orange-100 bg-opacity-50 rounded-lg p-3">
+                    <p className="text-xs font-medium text-orange-900">
+                      Pending
+                    </p>
+                    <p className="text-2xl font-bold text-orange-900 mt-1">
+                      {reconciliationStats.pendingRemittance}
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 bg-opacity-50 rounded-lg p-3">
+                    <p className="text-xs font-medium text-blue-900">Prepaid</p>
+                    <p className="text-2xl font-bold text-blue-900 mt-1">
+                      {reconciliationStats.prepaidNoRemittance}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
