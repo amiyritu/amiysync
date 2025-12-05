@@ -1,20 +1,24 @@
 import axios from "axios";
 
-const SHIPROCKET_EMAIL = process.env.SHIPROCKET_EMAIL;
-const SHIPROCKET_PASSWORD = process.env.SHIPROCKET_PASSWORD;
-
-if (!SHIPROCKET_EMAIL || !SHIPROCKET_PASSWORD) {
-  throw new Error(
-    "Missing SHIPROCKET_EMAIL or SHIPROCKET_PASSWORD environment variables",
-  );
-}
-
 // In-memory token cache (lost on function restart, which is expected for serverless)
 let cachedToken = null;
 
 const shiprocketBaseApi = axios.create({
   baseURL: "https://apiv2.shiprocket.in",
 });
+
+function getShiprocketConfig() {
+  const email = process.env.SHIPROCKET_EMAIL;
+  const password = process.env.SHIPROCKET_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error(
+      "Missing SHIPROCKET_EMAIL or SHIPROCKET_PASSWORD environment variables",
+    );
+  }
+
+  return { email, password };
+}
 
 /**
  * Logs in to Shiprocket and returns a JWT token
@@ -28,10 +32,12 @@ export async function login() {
   }
 
   try {
+    const { email, password } = getShiprocketConfig();
+
     console.log("[Shiprocket] Attempting login...");
     const response = await shiprocketBaseApi.post("/v1/external/auth/login", {
-      email: SHIPROCKET_EMAIL,
-      password: SHIPROCKET_PASSWORD,
+      email,
+      password,
     });
 
     cachedToken = response.data.token;
@@ -154,10 +160,9 @@ export async function getRemittanceData() {
     );
     return settlements;
   } catch (error) {
-    console.error(
-      "[Shiprocket] Error fetching remittance data:",
-      error.message,
+    console.error("[Shiprocket] Error fetching remittance data:", error.message);
+    throw new Error(
+      `Failed to fetch Shiprocket settlements: ${error.message}`,
     );
-    throw new Error(`Failed to fetch Shiprocket settlements: ${error.message}`);
   }
 }
