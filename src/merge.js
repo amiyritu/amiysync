@@ -129,32 +129,40 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         stats.prepaid++;
       }
 
-      // Look up settlement data using dual-key matching with fallback logic
+      // Look up settlement data using multi-key matching with fallback logic
       let settlement = null;
       let matchMethod = "none";
 
-      // Strategy 1: Try to match by order_name (most reliable for human-readable matching)
-      if (orderName) {
-        settlement = shiprocketMapByName.get(orderName);
+      // Strategy 1: Try to match by Shopify order_id against Shiprocket's CEF_ID
+      if (orderIdString) {
+        settlement = shiprocketMapByCefId.get(orderIdString);
         if (settlement) {
-          matchMethod = "name";
+          matchMethod = "cef_id";
         }
       }
 
-      // Strategy 2: Fall back to order_id matching if name didn't work
+      // Strategy 2: Fall back to order_id matching
       if (!settlement && orderIdString) {
-        settlement = shiprocketMapById.get(orderIdString);
+        settlement = shiprocketMapByOrderId.get(orderIdString);
         if (settlement) {
-          matchMethod = "id";
+          matchMethod = "order_id";
+        }
+      }
+
+      // Strategy 3: Fall back to UTE matching if available
+      if (!settlement && orderName) {
+        settlement = shiprocketMapByUte.get(orderName);
+        if (settlement) {
+          matchMethod = "ute";
         }
       }
 
       // Track matching statistics
-      if (matchMethod === "name") {
+      if (matchMethod === "cef_id") {
         stats.matchedByName++;
-      } else if (matchMethod === "id") {
+      } else if (matchMethod === "order_id") {
         stats.matchedById++;
-      } else {
+      } else if (matchMethod === "ute") {
         stats.matchedByNone++;
       }
 
