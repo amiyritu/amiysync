@@ -1,0 +1,41 @@
+# Fly.io configuration for Fusion Starter
+app = "fusion-reconciliation"
+
+[build]
+  builder = "docker"
+
+[env]
+  LOG_LEVEL = "debug"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 3000
+  processes = ["app"]
+
+  [services.http_checks]
+    enabled = true
+    grace_period = "30s"
+    interval = "15s"
+    method = "get"
+    path = "/api/ping"
+    protocol = "http"
+    timeout = "5s"
+
+[metrics]
+  port = 9090
+
+[checks]
+  [checks.status]
+    type = "http"
+    grace_period = "30s"
+    interval = "15s"
+    method = "get"
+    path = "/api/ping"
+    protocol = "http"
+    timeout = "5s"

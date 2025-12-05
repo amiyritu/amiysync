@@ -19,6 +19,15 @@ export function createServer() {
     res.json({ message: ping });
   });
 
+  app.get("/api/status", (_req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      uptime: process.uptime(),
+    });
+  });
+
   app.get("/api/demo", handleDemo);
   app.get("/api/health-check", handleHealthCheck);
   app.get("/api/reconcile", handleReconcile);
