@@ -136,9 +136,14 @@ export default function Index() {
   const fetchShiprocketCutsPage = async (page: number) => {
     try {
       setShiprocketCutsLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
       const response = await fetch(
         `/api/reconcile/shiprocket-cuts?page=${page}`,
+        { signal: controller.signal },
       );
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -153,9 +158,11 @@ export default function Index() {
         setShiprocketCutsTotalItems(data.totalItems);
       } else {
         console.error("Shiprocket Cuts API error:", data.message);
+        throw new Error(data.message || "Shiprocket Cuts API returned an error");
       }
     } catch (error) {
       console.error("Error fetching Shiprocket Cuts page:", error);
+      throw error;
     } finally {
       setShiprocketCutsLoading(false);
     }
