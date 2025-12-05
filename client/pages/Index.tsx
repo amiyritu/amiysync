@@ -25,6 +25,7 @@ interface ReconciliationStats {
 export default function Index() {
   const [reconciliationStatus, setReconciliationStatus] =
     useState<ReconciliationResponse | null>(null);
+  const [reconciliationStats, setReconciliationStats] = useState<ReconciliationStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
