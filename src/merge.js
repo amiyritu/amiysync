@@ -95,9 +95,21 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
   // Log sample Shopify keys for debugging
   if (shopifyRows.length > 0) {
     console.log(
-      `[Merge] Sample Shopify Order IDs: ${shopifyRows
+      `[Merge] Sample Shopify Order IDs (numeric): ${shopifyRows
         .slice(0, 3)
         .map((r) => r[0])
+        .join(", ")}`,
+    );
+    console.log(
+      `[Merge] Sample Shopify Order Names (human): ${shopifyRows
+        .slice(0, 3)
+        .map((r) => r[1])
+        .join(", ")}`,
+    );
+    console.log(
+      `[Merge] Sample Shopify (extracted #): ${shopifyRows
+        .slice(0, 3)
+        .map((r) => String(r[1]).replace(/^#/, ""))
         .join(", ")}`,
     );
   }
