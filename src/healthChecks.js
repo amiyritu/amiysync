@@ -54,8 +54,8 @@ export async function checkShiprocketHealth() {
   try {
     getShiprocketConfig(); // Validate env vars exist
 
-    // Try to get settlements to verify auth works
-    const response = await shiprocketGet("/v1/external/settlements", {
+    // Try to get orders to verify auth works (orders endpoint is reliable for health checks)
+    const response = await shiprocketGet("/v1/external/orders", {
       limit: 1,
     });
 
