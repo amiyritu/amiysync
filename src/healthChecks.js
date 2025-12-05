@@ -63,8 +63,14 @@ export async function checkShiprocketHealth() {
       console.log("[Health] Shiprocket API is healthy");
       return { status: true, message: "Connected" };
     }
+
+    console.log("[Health] Shiprocket API response was undefined");
+    return { status: false, message: "Empty response" };
   } catch (error) {
-    console.error("[Health] Shiprocket API check failed:", error.message);
+    console.error("[Health] Shiprocket API check failed:", {
+      message: error.message,
+      stack: error.stack,
+    });
 
     if (
       error.message.includes("401") ||
@@ -73,6 +79,8 @@ export async function checkShiprocketHealth() {
       return { status: false, message: "Invalid credentials" };
     } else if (error.message.includes("timeout")) {
       return { status: false, message: "Request timeout" };
+    } else if (error.message.includes("ENOTFOUND")) {
+      return { status: false, message: "Network error" };
     }
   }
 
