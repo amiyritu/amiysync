@@ -544,6 +544,26 @@ export default function Index() {
           />
         </div>
 
+        {/* Shiprocket Cuts Table */}
+        <div className="mb-8">
+          <ShiprocketCutsTable
+            items={shiprocketCutsResults}
+            page={shiprocketCutsPage}
+            totalPages={shiprocketCutsTotalPages}
+            totalItems={shiprocketCutsTotalItems}
+            perPage={50}
+            onPrevPage={() => {
+              if (shiprocketCutsPage > 1)
+                fetchShiprocketCutsPage(shiprocketCutsPage - 1);
+            }}
+            onNextPage={() => {
+              if (shiprocketCutsPage < shiprocketCutsTotalPages)
+                fetchShiprocketCutsPage(shiprocketCutsPage + 1);
+            }}
+            isLoading={shiprocketCutsLoading}
+          />
+        </div>
+
         {/* Information Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Scheduled Runs */}
