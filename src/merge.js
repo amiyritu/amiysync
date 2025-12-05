@@ -61,7 +61,10 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     `[Merge] Built Shiprocket settlement ID map with ${shiprocketMapById.size} unique order IDs`,
   );
   console.log(
-    `[Merge] Ready to match using ID and name with fallback logic`,
+    `[Merge] Name-based matching ready if Shiprocket API provides order names`,
+  );
+  console.log(
+    `[Merge] Fallback strategy: name → ID → no match`,
   );
 
   // Reconcile each Shopify order with Shiprocket data
