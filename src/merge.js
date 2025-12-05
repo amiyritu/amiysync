@@ -24,12 +24,12 @@ function determineStatus(isCod, hasSettlement, difference) {
 
 /**
  * Merges Shopify orders with Shiprocket settlements to create detailed reconciliation rows
- * Uses dual-key matching (by name and ID) with fallback logic
+ * Uses dual-key matching (by CEF ID and Shopify ID) with fallback logic
  * Handles both COD and prepaid orders, with per-order settlement details
  * @param {Array<Array>} shopifyRows - Array of Shopify order rows
  *   Format: [order_id, order_name, order_date, customer_name, payment_method, order_total, financial_status, fulfillment_status, cod_prepaid]
  * @param {Array<Array>} shiprocketRows - Array of Shiprocket settlement rows
- *   Format: [order_id, awb, order_amount, shipping_charges, cod_charges, adjustments, rto_reversal, net_settlement, remittance_date, batch_id]
+ *   Format: [cef_id, ute, order_id, awb, order_amount, shipping_charges, cod_charges, adjustments, rto_reversal, net_settlement, remittance_date, batch_id]
  * @returns {Array<Array>} Array of reconciliation rows
  */
 export function mergeDatasets(shopifyRows, shiprocketRows) {
