@@ -7,7 +7,7 @@ let cachedTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const handleShopifyPaginated: RequestHandler = async (req, res) => {
-  const timeoutMs = 28000;
+  const timeoutMs = 24000; // 24 seconds, well under Netlify's 26 second limit
   const startTime = Date.now();
 
   const timeoutHandle = setTimeout(() => {
