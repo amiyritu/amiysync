@@ -228,18 +228,11 @@ export default function Index() {
           </div>
 
           {/* API Information */}
-          <div className="bg-slate-700 bg-opacity-50 border border-slate-600 rounded-xl p-6 backdrop-blur-sm">
+          <div className="bg-slate-700 bg-opacity-50 border border-slate-600 rounded-xl p-6 backdrop-blur-sm col-span-1 sm:col-span-2">
             <h3 className="text-lg font-semibold text-white mb-4">
-              API Integration
+              API Integration Status
             </h3>
-            <p className="text-slate-300 text-sm mb-3">
-              This system integrates with:
-            </p>
-            <ul className="text-slate-200 text-sm space-y-1 ml-4 list-disc">
-              <li>Shopify Admin API</li>
-              <li>Shiprocket Settlement API</li>
-              <li>Google Sheets API</li>
-            </ul>
+            <ApiHealthCheck />
           </div>
 
           {/* Results Location */}
