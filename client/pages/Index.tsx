@@ -116,6 +116,33 @@ export default function Index() {
     }
   };
 
+  // Fetch paginated Shiprocket cuts results
+  const fetchShiprocketCutsPage = async (page: number) => {
+    try {
+      setShiprocketCutsLoading(true);
+      const response = await fetch(`/api/reconcile/shiprocket-cuts?page=${page}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: PaginatedShiprocketCutsResponse = await response.json();
+
+      if (data.status === "success") {
+        setShiprocketCutsResults(data.items);
+        setShiprocketCutsPage(data.page);
+        setShiprocketCutsTotalPages(data.totalPages);
+        setShiprocketCutsTotalItems(data.totalItems);
+      } else {
+        console.error("Shiprocket Cuts API error:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching Shiprocket Cuts page:", error);
+    } finally {
+      setShiprocketCutsLoading(false);
+    }
+  };
+
   // Complete reconciliation with progress tracking
   const completeReconciliation = async () => {
     try {
