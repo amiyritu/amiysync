@@ -1,10 +1,10 @@
 [build]
-  command = "npm install && npm run build"
+  command = "pnpm install && pnpm run build"
   functions = "netlify/functions"
   publish = "dist/spa"
 
 [dev]
-  command = "npm run dev"
+  command = "pnpm run dev"
   framework = "react"
 
 [functions]
