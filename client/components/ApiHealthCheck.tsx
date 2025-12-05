@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { CheckCircle, AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { CheckCircle, AlertCircle, RefreshCw, Clock } from "lucide-react";
 
 interface ApiStatus {
   status: boolean;
@@ -19,14 +19,16 @@ interface ApiHealthCheckProps {
 }
 
 export function ApiHealthCheck({ onCheck }: ApiHealthCheckProps) {
-  const [healthStatus, setHealthStatus] = useState<HealthCheckResult | null>(null);
+  const [healthStatus, setHealthStatus] = useState<HealthCheckResult | null>(
+    null,
+  );
   const [isChecking, setIsChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const checkApis = async () => {
     try {
       setIsChecking(true);
-      const response = await fetch('/api/health-check');
+      const response = await fetch("/api/health-check");
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -40,12 +42,12 @@ export function ApiHealthCheck({ onCheck }: ApiHealthCheckProps) {
         onCheck(data);
       }
     } catch (error) {
-      console.error('Health check error:', error);
+      console.error("Health check error:", error);
       setHealthStatus({
         timestamp: new Date().toISOString(),
-        shopify: { status: false, message: 'Check failed' },
-        shiprocket: { status: false, message: 'Check failed' },
-        sheets: { status: false, message: 'Check failed' },
+        shopify: { status: false, message: "Check failed" },
+        shiprocket: { status: false, message: "Check failed" },
+        sheets: { status: false, message: "Check failed" },
         allHealthy: false,
       });
     } finally {
@@ -76,7 +78,7 @@ export function ApiHealthCheck({ onCheck }: ApiHealthCheckProps) {
         )}
         <h4 className="font-medium text-slate-900">{name}</h4>
       </div>
-      <p className={`text-sm ${status ? 'text-green-700' : 'text-red-700'}`}>
+      <p className={`text-sm ${status ? "text-green-700" : "text-red-700"}`}>
         {message}
       </p>
     </div>
@@ -125,7 +127,7 @@ export function ApiHealthCheck({ onCheck }: ApiHealthCheckProps) {
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
-          {isChecking ? 'Checking...' : 'Check APIs'}
+          {isChecking ? "Checking..." : "Check APIs"}
         </button>
 
         {lastChecked && (
