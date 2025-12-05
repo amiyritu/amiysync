@@ -152,6 +152,9 @@ export default function Index() {
           shiprocketRows: data.shiprocketRows,
           reconciledRows: data.reconciledRows,
         });
+        if (data.reconciliationStats) {
+          setReconciliationStats(data.reconciliationStats);
+        }
         setLastUpdated(new Date());
       } else {
         throw new Error(data.message || "Reconciliation failed");
