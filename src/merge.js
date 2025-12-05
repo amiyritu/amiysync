@@ -78,23 +78,17 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     }
   });
 
-  console.log(
-    `[Merge] Built Shiprocket settlement maps:`,
-  );
-  console.log(
-    `  - Channel Order IDs (Shopify): ${shiprocketMapByCefId.size}`,
-  );
-  console.log(
-    `  - Shiprocket Order IDs: ${shiprocketMapByOrderId.size}`,
-  );
-  console.log(
-    `  - UTEs: ${shiprocketMapByUte.size}`,
-  );
+  console.log(`[Merge] Built Shiprocket settlement maps:`);
+  console.log(`  - Channel Order IDs (Shopify): ${shiprocketMapByCefId.size}`);
+  console.log(`  - Shiprocket Order IDs: ${shiprocketMapByOrderId.size}`);
+  console.log(`  - UTEs: ${shiprocketMapByUte.size}`);
 
   // Log sample Shiprocket keys for debugging
   if (shiprocketMapByCefId.size > 0) {
     const cefKeys = Array.from(shiprocketMapByCefId.keys()).slice(0, 3);
-    console.log(`[Merge] Sample Shiprocket Channel Order IDs: ${cefKeys.join(", ")}`);
+    console.log(
+      `[Merge] Sample Shiprocket Channel Order IDs: ${cefKeys.join(", ")}`,
+    );
   }
   if (shiprocketMapByOrderId.size > 0) {
     const orderIds = Array.from(shiprocketMapByOrderId.keys()).slice(0, 3);
@@ -104,7 +98,10 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
   // Log sample Shopify keys for debugging
   if (shopifyRows.length > 0) {
     console.log(
-      `[Merge] Sample Shopify Order IDs: ${shopifyRows.slice(0, 3).map((r) => r[0]).join(", ")}`,
+      `[Merge] Sample Shopify Order IDs: ${shopifyRows
+        .slice(0, 3)
+        .map((r) => r[0])
+        .join(", ")}`,
     );
   }
 
@@ -153,7 +150,9 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
 
       // Strategy 1: Try to match Shopify order name (#3787) against Shiprocket's channel_order_id (3787)
       // Strip the "#" prefix from Shopify order name for matching
-      const orderNameWithoutHash = orderName ? orderName.replace(/^#/, "").trim() : "";
+      const orderNameWithoutHash = orderName
+        ? orderName.replace(/^#/, "").trim()
+        : "";
       if (orderNameWithoutHash) {
         settlement = shiprocketMapByCefId.get(orderNameWithoutHash);
         if (settlement) {
@@ -253,7 +252,9 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     }
   });
 
-  console.log(`[Merge] Reconciliation complete: ${reconciliation.length} rows generated`);
+  console.log(
+    `[Merge] Reconciliation complete: ${reconciliation.length} rows generated`,
+  );
   console.log("[Merge] Summary Statistics:");
   console.log(`  - Total Orders: ${stats.totalOrders}`);
   console.log(`  - COD Orders: ${stats.cod}`);

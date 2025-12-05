@@ -176,7 +176,9 @@ async function getSettlementBatchDetails(batchId) {
   const batchOrders = [];
 
   try {
-    console.log(`[Shiprocket] Fetching details for settlement batch: ${batchId}`);
+    console.log(
+      `[Shiprocket] Fetching details for settlement batch: ${batchId}`,
+    );
     const response = await shiprocketGet(`/v1/external/settlements/${batchId}`);
 
     // Handle different response structures
@@ -226,7 +228,14 @@ async function getSettlementBatchDetails(batchId) {
           channelOrderId, // channel_order_id / shopify_order_id (primary match key)
           ute, // ute / last_mile_awb (secondary match key)
           safeParseString(order.order_id || order.id || "", ""), // shiprocket_order_id
-          safeParseString(order.awb || order.last_mile_awb || order.tracking_number || order.shipment_id || "", ""), // awb
+          safeParseString(
+            order.awb ||
+              order.last_mile_awb ||
+              order.tracking_number ||
+              order.shipment_id ||
+              "",
+            "",
+          ), // awb
           safeParseFloat(order.order_amount || order.base_amount || 0, 0), // order_amount
           safeParseFloat(order.shipping_charges, 0), // shipping_charges
           safeParseFloat(order.cod_charges, 0), // cod_charges
@@ -234,7 +243,9 @@ async function getSettlementBatchDetails(batchId) {
           safeParseFloat(order.rto_reversal, 0), // rto_reversal
           safeParseFloat(order.net_settlement, 0), // net_settlement
           safeParseString(
-            order.remittance_date || order.date || new Date().toISOString().split("T")[0],
+            order.remittance_date ||
+              order.date ||
+              new Date().toISOString().split("T")[0],
             new Date().toISOString().split("T")[0],
           ), // remittance_date
           safeParseString(order.batch_id, batchId), // batch_id
@@ -281,12 +292,17 @@ export async function getRemittanceData() {
       console.log(
         "[Shiprocket] Fetching settlement batch list from /v1/external/settlements...",
       );
-      const settlementResponse = await shiprocketGet("/v1/external/settlements");
+      const settlementResponse = await shiprocketGet(
+        "/v1/external/settlements",
+      );
 
       // Handle different response structures for batch list
       if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
         batches = settlementResponse.data;
-      } else if (settlementResponse.data && Array.isArray(settlementResponse.data.batches)) {
+      } else if (
+        settlementResponse.data &&
+        Array.isArray(settlementResponse.data.batches)
+      ) {
         batches = settlementResponse.data.batches;
       } else if (Array.isArray(settlementResponse)) {
         batches = settlementResponse;
@@ -298,9 +314,7 @@ export async function getRemittanceData() {
         batches = [];
       }
 
-      console.log(
-        `[Shiprocket] Found ${batches.length} settlement batch(es)`,
-      );
+      console.log(`[Shiprocket] Found ${batches.length} settlement batch(es)`);
 
       // Fetch details for each batch
       if (batches.length > 0) {
@@ -348,7 +362,10 @@ export async function getRemittanceData() {
         let orders = [];
         if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
           orders = ordersResponse.data;
-        } else if (ordersResponse.data && Array.isArray(ordersResponse.data.results)) {
+        } else if (
+          ordersResponse.data &&
+          Array.isArray(ordersResponse.data.results)
+        ) {
           orders = ordersResponse.data.results;
         } else if (Array.isArray(ordersResponse)) {
           orders = ordersResponse;
@@ -384,15 +401,23 @@ export async function getRemittanceData() {
               channelOrderId, // channel_order_id / shopify_order_id (primary match key)
               ute, // ute / last_mile_awb (secondary match key)
               safeParseString(order.order_id || order.id || "", ""), // shiprocket_order_id
-              safeParseString(order.awb || order.last_mile_awb || order.tracking_number || "", ""), // awb
-              safeParseFloat(order.order_amount || order.total || order.base_amount || 0, 0), // order_amount
+              safeParseString(
+                order.awb || order.last_mile_awb || order.tracking_number || "",
+                "",
+              ), // awb
+              safeParseFloat(
+                order.order_amount || order.total || order.base_amount || 0,
+                0,
+              ), // order_amount
               safeParseFloat(order.shipping_charges || order.shipping || 0, 0), // shipping_charges
               safeParseFloat(order.cod_charges || order.cod || 0, 0), // cod_charges
               safeParseFloat(order.adjustments || 0, 0), // adjustments
               safeParseFloat(order.rto_reversal || order.rto || 0, 0), // rto_reversal
               safeParseFloat(order.net_settlement || order.net_amount || 0, 0), // net_settlement
               safeParseString(
-                order.date || order.created_at || new Date().toISOString().split("T")[0],
+                order.date ||
+                  order.created_at ||
+                  new Date().toISOString().split("T")[0],
                 new Date().toISOString().split("T")[0],
               ), // remittance_date
               safeParseString(order.batch_id || order.crf_id || "", ""), // batch_id
