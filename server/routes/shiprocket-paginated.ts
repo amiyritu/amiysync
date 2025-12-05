@@ -56,16 +56,19 @@ export const handleShiprocketPaginated: RequestHandler = async (req, res) => {
     const items = cachedShiprocketData.slice(startIndex, endIndex);
 
     clearTimeout(timeoutHandle);
-    res.status(200).json({
-      status: "success",
-      items,
-      page,
-      perPage: ITEMS_PER_PAGE,
-      totalItems,
-      totalPages,
-      hasNext: page < totalPages,
-      timestamp: new Date().toISOString(),
-    });
+
+    if (!timeoutTriggered && !res.headersSent) {
+      res.status(200).json({
+        status: "success",
+        items,
+        page,
+        perPage: ITEMS_PER_PAGE,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages,
+        timestamp: new Date().toISOString(),
+      });
+    }
   } catch (error) {
     clearTimeout(timeoutHandle);
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -76,7 +79,7 @@ export const handleShiprocketPaginated: RequestHandler = async (req, res) => {
       errorMessage,
     );
 
-    if (!res.headersSent) {
+    if (!timeoutTriggered && !res.headersSent) {
       res.status(500).json({
         status: "error",
         message: errorMessage,
