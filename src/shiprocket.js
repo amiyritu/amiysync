@@ -5,6 +5,7 @@ let cachedToken = null;
 
 const shiprocketBaseApi = axios.create({
   baseURL: "https://apiv2.shiprocket.in",
+  timeout: 15000, // 15 second timeout per request
 });
 
 export function getShiprocketConfig() {
