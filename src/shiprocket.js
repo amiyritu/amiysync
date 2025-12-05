@@ -45,6 +45,8 @@ export async function login() {
     return cachedToken;
   } catch (error) {
     console.error("[Shiprocket] Login failed:", error.message);
+    console.error("[Shiprocket] Login error status:", error.response?.status);
+    console.error("[Shiprocket] Login error response:", error.response?.data);
     throw new Error(`Shiprocket login failed: ${error.message}`);
   }
 }
