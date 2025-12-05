@@ -1,7 +1,10 @@
 import { getAllShopifyOrders } from "./shopify.js";
 import { getRemittanceData } from "./shiprocket.js";
 import { mergeDatasets } from "./merge.js";
-import { generateCodReconciliation, getCodReconciliationHeaders } from "./codReconciliation.js";
+import {
+  generateCodReconciliation,
+  getCodReconciliationHeaders,
+} from "./codReconciliation.js";
 import { clearAndWriteSheet } from "./sheets.js";
 
 /**
@@ -35,7 +38,9 @@ export async function runReconciliation() {
     );
 
     // Step 4: Generate COD-specific reconciliation
-    console.log("[Reconciliation] Step 4: Generating COD-specific reconciliation...");
+    console.log(
+      "[Reconciliation] Step 4: Generating COD-specific reconciliation...",
+    );
     const codReconciliationData = generateCodReconciliation(
       shopifyOrders,
       shiprocketSettlements,
@@ -49,8 +54,14 @@ export async function runReconciliation() {
 
     // Write COD reconciliation with headers
     const codHeaders = getCodReconciliationHeaders();
-    const codReconciliationWithHeaders = [...codHeaders, ...codReconciliationData];
-    await clearAndWriteSheet("COD_Orders_Settlement", codReconciliationWithHeaders);
+    const codReconciliationWithHeaders = [
+      ...codHeaders,
+      ...codReconciliationData,
+    ];
+    await clearAndWriteSheet(
+      "COD_Orders_Settlement",
+      codReconciliationWithHeaders,
+    );
 
     const endTime = new Date();
     const duration = (endTime - startTime) / 1000; // in seconds

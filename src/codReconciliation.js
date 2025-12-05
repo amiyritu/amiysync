@@ -1,7 +1,7 @@
 /**
  * COD-Specific Reconciliation Module
  * Provides detailed settlement tracking for Cash-on-Delivery orders from Shopify
- * 
+ *
  * Data Flow:
  * 1. Shopify API → COD Orders (only orders with payment_method containing "cod")
  * 2. Shiprocket API → Settlement Data for each COD order
@@ -37,7 +37,7 @@ export function generateCodReconciliation(shopifyRows, shiprocketRows) {
   });
 
   console.log(
-    `[COD Reconciliation] Built Shiprocket maps: ${shiprocketByChanelId.size} channel IDs, ${shiprocketByOrderId.size} order IDs`
+    `[COD Reconciliation] Built Shiprocket maps: ${shiprocketByChanelId.size} channel IDs, ${shiprocketByOrderId.size} order IDs`,
   );
 
   // Filter for COD orders and match with Shiprocket data
@@ -151,7 +151,7 @@ export function generateCodReconciliation(shopifyRows, shiprocketRows) {
     } catch (error) {
       console.error(
         `[COD Reconciliation] Error processing order ${orderRow[0]}:`,
-        error.message
+        error.message,
       );
     }
   });
@@ -161,13 +161,13 @@ export function generateCodReconciliation(shopifyRows, shiprocketRows) {
   console.log(`  - Matched with Shiprocket: ${stats.matched}`);
   console.log(`  - Not Matched: ${stats.notMatched}`);
   console.log(
-    `  - Total Shiprocket Amount: ₹${stats.totalShiprocketAmount.toFixed(2)}`
+    `  - Total Shiprocket Amount: ₹${stats.totalShiprocketAmount.toFixed(2)}`,
   );
   console.log(
-    `  - Total Net Settlement: ₹${stats.totalShiprocketNetSettlement.toFixed(2)}`
+    `  - Total Net Settlement: ₹${stats.totalShiprocketNetSettlement.toFixed(2)}`,
   );
   console.log(
-    `  - Total COD Charges Deducted: ₹${stats.totalCodCharges.toFixed(2)}`
+    `  - Total COD Charges Deducted: ₹${stats.totalCodCharges.toFixed(2)}`,
   );
 
   return codOrders;

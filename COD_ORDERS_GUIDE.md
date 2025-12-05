@@ -1,6 +1,7 @@
 # COD Orders Reconciliation Guide
 
 ## Overview
+
 This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with Shiprocket settlement data to show you exactly what was received for each order.
 
 ---
@@ -35,28 +36,33 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 ## COD_Orders_Settlement Sheet Columns
 
 ### Column A: Shopify Order ID
+
 - **What it is**: Shopify's internal unique identifier for this order
 - **Example**: `gid://shopify/Order/7439439872`
 - **Use it for**: Technical reference, API lookups
 - **Matches with Shiprocket**: See "Match Method" column (P)
 
-### Column B: Shopify Order #
+### Column B: Shopify Order
+
 - **What it is**: Human-readable order number shown on invoices
 - **Example**: `#3272`
 - **Use it for**: Customer communication, invoice reference
 - **Matches with Shiprocket**: Shiprocket's `channel_order_id` (without the #)
 
 ### Column C: Order Date
+
 - **What it is**: When the order was placed on Shopify
 - **Example**: `2024-01-15T10:30:00Z`
 - **Use it for**: Tracking order timeline
 
 ### Column D: Customer Name
+
 - **What it is**: Who ordered it
 - **Example**: `Amiy Ritu`
 - **Use it for**: Customer communication reference
 
 ### Column E: Shopify Order Total (₹)
+
 - **What it is**: Total amount customer was supposed to pay (what you charged them)
 - **Example**: `1190`
 - **Use it for**: Verify what customer owed
@@ -67,12 +73,14 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 ## Shiprocket Settlement Details (What You Actually Received)
 
 ### Column F: Shiprocket Order Amount (₹)
+
 - **What it is**: The amount Shiprocket says it collected from the customer
 - **Example**: `1190`
 - **Should match**: Shopify Order Total (Column E)
 - **If different**: Customer may not have paid full amount or Shiprocket had issues
 
 ### Column G: Net Settlement (₹) ⭐ **MOST IMPORTANT**
+
 - **What it is**: What actually hit your bank account after all deductions
 - **Example**: `1040`
 - **Calculation**: Order Amount - Shipping Charges - COD Charges - Adjustments - RTO
@@ -80,12 +88,14 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 - **Key fact**: For COD, this is lower than Shopify total because of Shiprocket fees
 
 ### Column H: Shipping Charges (₹)
+
 - **What it is**: Shiprocket's cost to ship the item
 - **Example**: `100`
 - **Who pays it**: You, not the customer (standard for COD)
 - **Deducted from**: Your settlement amount
 
 ### Column I: COD Charges (₹) ⭐ **IMPORTANT**
+
 - **What it is**: Shiprocket's fee for collecting cash from customer
 - **Example**: `50`
 - **Why it exists**: Handling payment, logistics of cash flow
@@ -93,6 +103,7 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 - **Deducted from**: Your settlement amount (reduces Column G)
 
 ### Column J: Adjustments (₹)
+
 - **What it is**: Any additional deductions or credits
 - **Example**: `0` or `-10` (if Shiprocket gave you credit)
 - **Reasons for deductions**: Weight overcharge, handling fees, discrepancies
@@ -100,6 +111,7 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 - **Deducted from**: Your settlement amount
 
 ### Column K: RTO Reversal (₹)
+
 - **What it is**: Cost if item was returned to origin
 - **Example**: `0` (no return) or `150` (customer refused, returned to you)
 - **Happens when**: Customer refuses delivery or is not available
@@ -111,6 +123,7 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 ## Key Columns for Understanding Discrepancies
 
 ### Column L: Difference (₹) ⭐ **DISCREPANCY CHECK**
+
 - **What it is**: Shopify Total - Net Settlement
 - **Example**: `150` (means ₹150 less than expected)
 - **Calculation**: Column E - Column G
@@ -118,8 +131,9 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
   - **0**: Perfect match, everything reconciled
   - **Positive number**: You got less than charged (due to fees/deductions)
   - **Negative number**: You got more than expected (unusual, review it)
-  
+
 **For Typical COD Order with Example Numbers:**
+
 ```
   Shopify Order Total:    ₹1190  (Column E)
   - Shipping Charges:     -₹100  (Column H)
@@ -132,17 +146,20 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 
 ## Tracking Columns
 
-### Column M: AWB / Tracking #
+### Column M: AWB / Tracking
+
 - **What it is**: Shiprocket's shipment tracking number (Air Waybill)
 - **Use it for**: Track the shipment with courier
 - **If blank**: Order not yet shipped or data not received from Shiprocket
 
 ### Column N: Remittance Date
+
 - **What it is**: When Shiprocket settled/remitted the money
 - **Use it for**: Reconcile with your bank deposits
 - **Match with**: Your bank statement date (usually 3-5 days after delivery)
 
 ### Column O: Batch ID
+
 - **What it is**: Shiprocket's settlement batch reference
 - **Use it for**: Group orders by settlement batch
 - **Helpful for**: Understanding when money was released together
@@ -152,6 +169,7 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 ## Matching Column
 
 ### Column P: Match Method
+
 - **Possible values**:
   - `channel_order_id`: Matched by Shopify order # (best match)
   - `shiprocket_order_id`: Matched by internal ID (fallback)
@@ -168,21 +186,21 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 
 ### Order #3272 - Customer paid ₹1190 COD
 
-| Column | Label | Value | Explanation |
-|--------|-------|-------|-------------|
-| A | Shopify Order ID | `gid://...7439` | Internal Shopify ID |
-| B | Shopify Order # | `#3272` | The order number |
-| E | Shopify Total | ₹1190 | What customer owed |
-| F | Shiprocket Amount | ₹1190 | What Shiprocket collected ✓ |
-| G | Net Settlement | ₹1040 | What you received |
-| H | Shipping Charges | ₹100 | Your shipping cost |
-| I | COD Charges | ₹50 | Shiprocket's collection fee |
-| J | Adjustments | ₹0 | No additional adjustments |
-| K | RTO Reversal | ₹0 | Order was delivered ✓ |
-| L | Difference | ₹150 | Expected (shipping + COD fees) |
-| M | AWB | `SR1234567890` | Tracking number |
-| N | Remittance Date | `2024-01-18` | When you got the money |
-| P | Match Method | `channel_order_id` | Matched by order number ✓ |
+| Column | Label             | Value              | Explanation                    |
+| ------ | ----------------- | ------------------ | ------------------------------ |
+| A      | Shopify Order ID  | `gid://...7439`    | Internal Shopify ID            |
+| B      | Shopify Order #   | `#3272`            | The order number               |
+| E      | Shopify Total     | ₹1190              | What customer owed             |
+| F      | Shiprocket Amount | ₹1190              | What Shiprocket collected ✓    |
+| G      | Net Settlement    | ₹1040              | What you received              |
+| H      | Shipping Charges  | ₹100               | Your shipping cost             |
+| I      | COD Charges       | ₹50                | Shiprocket's collection fee    |
+| J      | Adjustments       | ₹0                 | No additional adjustments      |
+| K      | RTO Reversal      | ₹0                 | Order was delivered ✓          |
+| L      | Difference        | ₹150               | Expected (shipping + COD fees) |
+| M      | AWB               | `SR1234567890`     | Tracking number                |
+| N      | Remittance Date   | `2024-01-18`       | When you got the money         |
+| P      | Match Method      | `channel_order_id` | Matched by order number ✓      |
 
 ---
 
@@ -191,6 +209,7 @@ This guide explains how Shopify COD (Cash-on-Delivery) orders are matched with S
 ### Common Scenarios:
 
 **Scenario 1: COD Order (Normal)**
+
 ```
 You charged customer:     ₹1000
 Shiprocket deducts:
@@ -201,6 +220,7 @@ Difference:              ₹150  ✓ EXPECTED
 ```
 
 **Scenario 2: Prepaid Order (No COD Fee)**
+
 ```
 You charged customer:     ₹1000
 Shiprocket deducts:
@@ -210,6 +230,7 @@ Difference:              ₹100  ✓ EXPECTED
 ```
 
 **Scenario 3: RTO (Return to Origin)**
+
 ```
 You charged customer:     ₹1000
 But customer refused!
@@ -225,21 +246,25 @@ Difference:              ₹200  ⚠️ REVIEW
 ## How to Use This Data
 
 ### 1. Find a Specific Order
+
 - Sort by "Shopify Order #" (Column B)
 - Find order #3272
 - Check "Match Method" (Column P) - if it says `no_match`, Shiprocket hasn't settled yet
 
 ### 2. Verify You Got Paid Correctly
+
 - Check "Net Settlement" (Column G) matches your bank deposit
 - Compare with "Shopify Order Total" (Column E)
 - Difference (Column L) should make sense (shipping + COD fees)
 
 ### 3. Investigate a Missing Order
+
 - Order #3272 not in this sheet?
 - Check "Reconciliation" sheet instead
 - Or check Shiprocket app to see if order was shipped
 
 ### 4. Dispute a Settlement Amount
+
 - Use "AWB" (Column M) to track with courier
 - Use "Batch ID" (Column O) to contact Shiprocket support
 - Have ready: Order #, Customer Name, Date, Expected vs Actual amount
@@ -249,29 +274,36 @@ Difference:              ₹200  ⚠️ REVIEW
 ## Common Issues & Solutions
 
 ### "No Match" in Column P
+
 **Problem**: Shiprocket data not showing up for order #3272
 **Reasons**:
+
 1. Order recently placed (Shiprocket needs 24-48 hours)
 2. Order not yet delivered (settlement comes after delivery)
 3. Order canceled before shipping
-**Solution**: Wait 2-3 days and run reconciliation again
+   **Solution**: Wait 2-3 days and run reconciliation again
 
 ### High Difference in Column L
+
 **Problem**: Difference of ₹500+ is unexpected
 **Reasons**:
+
 1. RTO (customer refused order) - check Column K
 2. Weight overcharge - check Shiprocket app
 3. Missing data - check "Shiprocket_Settlements" sheet
-**Solution**: 
+   **Solution**:
+
 - Contact Shiprocket support with Batch ID (Column O)
 - Reference AWB number (Column M) in your communication
 
 ### Negative Difference in Column L
+
 **Problem**: Getting more than charged (rare)
 **Reasons**:
+
 1. Data entry error
 2. Shiprocket credit from previous issue
-**Solution**: Contact Shiprocket to verify
+   **Solution**: Contact Shiprocket to verify
 
 ---
 
@@ -296,6 +328,7 @@ Shopify Order                  Shiprocket Settlement
 ## Technical Details for Your Reference
 
 ### How the Matching Works
+
 1. System takes Shopify order name: `#3272`
 2. Removes the `#`: `3272`
 3. Searches Shiprocket data for matching `channel_order_id`
@@ -303,6 +336,7 @@ Shopify Order                  Shiprocket Settlement
 5. If not found, searches by internal order ID (fallback)
 
 ### Order of Deductions (in Shiprocket)
+
 ```
 Order Amount (what customer paid)
 - Shipping Charges (your cost)
@@ -313,6 +347,7 @@ Order Amount (what customer paid)
 ```
 
 ### Settlement Timeline
+
 ```
 Day 0: Customer places COD order on Shopify
 Day 1: Shiprocket ships package
@@ -327,6 +362,7 @@ Day 11: Reconciliation data shows in Google Sheet
 ## Getting Help
 
 When contacting Shiprocket support, provide:
+
 1. Order # (Column B): `#3272`
 2. Shiprocket Order ID (Column A): Full order ID
 3. AWB / Tracking # (Column M): `SR1234567890`
