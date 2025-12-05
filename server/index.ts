@@ -41,6 +41,7 @@ export function createServer() {
   // Paginated reconciliation endpoints
   app.get("/api/reconcile/shopify", handleShopifyPaginated);
   app.get("/api/reconcile/shiprocket", handleShiprocketPaginated);
+  app.get("/api/reconcile/shiprocket-cuts", handleShiprocketCutsPaginated);
   app.post("/api/reconcile/complete", handleComplete);
 
   return app;
