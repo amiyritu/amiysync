@@ -300,6 +300,281 @@ async function getSettlementBatchDetails(batchId) {
 }
 
 /**
+ * Fetches all shipments from Shiprocket
+ * Fetches all pages of shipments to map orders to AWBs and amounts
+ * @returns {Promise<Array>} Array of shipment objects
+ */
+export async function getShipments() {
+  const allShipments = [];
+  const MAX_PAGES = 100; // High limit since we're fetching all on first run
+  const MAX_WAIT_TIME = 25000; // 25 second limit
+
+  try {
+    console.log("[Shiprocket] Fetching all shipments for cuts calculation...");
+    const startTime = Date.now();
+
+    let page = 1;
+    let hasMore = true;
+    const pageSize = 100;
+
+    while (hasMore && page <= MAX_PAGES) {
+      if (Date.now() - startTime > MAX_WAIT_TIME) {
+        console.log(
+          `[Shiprocket] Timeout approaching, stopping shipments fetch at page ${page}`,
+        );
+        break;
+      }
+
+      console.log(
+        `[Shiprocket] Fetching shipments page ${page} (size: ${pageSize})...`,
+      );
+      const response = await shiprocketGet("/v1/external/shipments", {
+        page,
+        per_page: pageSize,
+      });
+
+      let pageResults = [];
+      if (response.data && Array.isArray(response.data)) {
+        pageResults = response.data;
+      } else if (response.data && Array.isArray(response.data.shipments)) {
+        pageResults = response.data.shipments;
+      } else if (Array.isArray(response)) {
+        pageResults = response;
+      }
+
+      allShipments.push(...pageResults);
+      console.log(
+        `[Shiprocket] Page ${page}: fetched ${pageResults.length} shipments (total: ${allShipments.length})`,
+      );
+
+      if (pageResults.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+
+    console.log(`[Shiprocket] Total shipments fetched: ${allShipments.length}`);
+    return allShipments;
+  } catch (error) {
+    console.error("[Shiprocket] Error fetching shipments:", error.message);
+    throw new Error(`Failed to fetch shipments: ${error.message}`);
+  }
+}
+
+/**
+ * Fetches statement details (account transactions) from Shiprocket
+ * On first run, fetches from earliest possible date; otherwise from provided range
+ * @param {string} fromDate - Start date in YYYY-MM-DD format (optional, defaults to 1 year ago)
+ * @param {string} toDate - End date in YYYY-MM-DD format (optional, defaults to today)
+ * @returns {Promise<Array>} Array of transaction objects
+ */
+export async function getStatementDetails(fromDate = null, toDate = null) {
+  const allTransactions = [];
+  const MAX_PAGES = 100; // High limit for initial full fetch
+  const MAX_WAIT_TIME = 25000; // 25 second limit
+  const pageSize = 200;
+
+  try {
+    // Default to 1 year back for first run
+    if (!fromDate || !toDate) {
+      const today = new Date();
+      const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+
+      toDate = toDate || today.toISOString().split("T")[0];
+      fromDate = fromDate || oneYearAgo.toISOString().split("T")[0];
+    }
+
+    console.log(
+      `[Shiprocket] Fetching statement details from ${fromDate} to ${toDate}...`,
+    );
+    const startTime = Date.now();
+
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore && page <= MAX_PAGES) {
+      if (Date.now() - startTime > MAX_WAIT_TIME) {
+        console.log(
+          `[Shiprocket] Timeout approaching, stopping statement fetch at page ${page}`,
+        );
+        break;
+      }
+
+      console.log(
+        `[Shiprocket] Fetching statement page ${page} (size: ${pageSize})...`,
+      );
+      const response = await shiprocketGet(
+        "/v1/external/account/details/statement",
+        {
+          from: fromDate,
+          to: toDate,
+          page,
+          per_page: pageSize,
+        },
+      );
+
+      let pageResults = [];
+      if (response.data && Array.isArray(response.data)) {
+        pageResults = response.data;
+      } else if (response.data && Array.isArray(response.data.transactions)) {
+        pageResults = response.data.transactions;
+      } else if (Array.isArray(response)) {
+        pageResults = response;
+      }
+
+      allTransactions.push(...pageResults);
+      console.log(
+        `[Shiprocket] Page ${page}: fetched ${pageResults.length} transactions (total: ${allTransactions.length})`,
+      );
+
+      if (pageResults.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+
+    console.log(
+      `[Shiprocket] Total statement transactions fetched: ${allTransactions.length}`,
+    );
+    return allTransactions;
+  } catch (error) {
+    console.error("[Shiprocket] Error fetching statement details:", error.message);
+    throw new Error(`Failed to fetch statement details: ${error.message}`);
+  }
+}
+
+/**
+ * Calculates per-order Shiprocket cuts using statement details and shipment data
+ * Logic:
+ *   1. For each shipment, get order_amount (customer paid)
+ *   2. From statement, find all transactions referencing that shipment's AWB
+ *   3. Sum credits (cod_remittance) and debits (shipping_charges, etc)
+ *   4. shiprocket_cut = order_amount - remitted_amount
+ * @returns {Promise<Array>} Array of rows with per-order cut calculations
+ */
+export async function calculatePerOrderCuts() {
+  const cuts = [];
+
+  try {
+    console.log("[Shiprocket] Calculating per-order Shiprocket cuts...");
+
+    // Fetch both datasets
+    const [shipments, statements] = await Promise.all([
+      getShipments(),
+      getStatementDetails(),
+    ]);
+
+    console.log(
+      `[Shiprocket] Processing ${shipments.length} shipments against ${statements.length} statement transactions...`,
+    );
+
+    // Create a map of statements by AWB for faster lookup
+    const statementsByAwb = {};
+    statements.forEach((transaction) => {
+      // Extract AWB from description (format: "... for Order #ID / AWB 123456789" or similar)
+      const descriptionLower = (transaction.description || "").toLowerCase();
+      const awbMatch = descriptionLower.match(/awb[\s:]*(\d+)/);
+
+      if (awbMatch) {
+        const awb = awbMatch[1];
+        if (!statementsByAwb[awb]) {
+          statementsByAwb[awb] = [];
+        }
+        statementsByAwb[awb].push(transaction);
+      }
+    });
+
+    console.log(
+      `[Shiprocket] Mapped ${Object.keys(statementsByAwb).length} unique AWBs from statements`,
+    );
+
+    // Process each shipment
+    shipments.forEach((shipment) => {
+      try {
+        const orderId = safeParseString(
+          shipment.order_id || shipment.channel_order_id || "",
+          "",
+        );
+        const awb = safeParseString(shipment.awb || shipment.tracking_number || "", "");
+        const orderAmount = safeParseFloat(
+          shipment.order_amount || shipment.cod_amount || 0,
+          0,
+        );
+
+        // Find statement transactions for this shipment
+        const shipmentTransactions = statementsByAwb[awb] || [];
+
+        let totalRemitted = 0;
+        let totalCharges = 0;
+        const transactionDetails = [];
+
+        shipmentTransactions.forEach((txn) => {
+          const amount = safeParseFloat(txn.amount || 0, 0);
+          const type = txn.transaction_type || "unknown";
+
+          transactionDetails.push({
+            type,
+            amount,
+            date: txn.transaction_date || txn.date || "",
+            description: txn.description || "",
+          });
+
+          // Credits are positive (cod_remittance, refunds)
+          // Debits are negative (shipping_charges, rto_charges, etc)
+          if (amount > 0) {
+            totalRemitted += amount;
+          } else if (amount < 0) {
+            totalCharges += Math.abs(amount);
+          }
+        });
+
+        // Calculate cut: what Shiprocket kept
+        // If totalRemitted + totalCharges ≈ orderAmount, then cut = totalCharges
+        // Otherwise, cut = orderAmount - totalRemitted
+        const shiprocketCut = orderAmount - totalRemitted;
+        const hasStatementData = shipmentTransactions.length > 0;
+
+        const row = [
+          orderId, // order_id (Shopify order ID)
+          awb, // awb
+          safeParseString(shipment.shipment_id || shipment.id || "", ""), // shiprocket_shipment_id
+          orderAmount, // order_amount (customer paid)
+          totalRemitted, // total_remitted (credits to merchant)
+          totalCharges, // total_charges (debits from merchant)
+          shiprocketCut, // shiprocket_cut (calculated: paid - remitted)
+          shipment.status || "unknown", // shipment_status
+          hasStatementData ? "Yes" : "No", // has_statement_data
+          transactionDetails.length, // transaction_count
+          safeParseString(
+            shipment.created_at || shipment.date || new Date().toISOString().split("T")[0],
+            new Date().toISOString().split("T")[0],
+          ), // shipment_date
+        ];
+
+        cuts.push(row);
+      } catch (shipmentError) {
+        console.error(
+          `[Shiprocket] Error processing shipment:`,
+          shipmentError.message,
+        );
+      }
+    });
+
+    console.log(
+      `[Shiprocket] Calculated cuts for ${cuts.length} shipments`,
+    );
+    return cuts;
+  } catch (error) {
+    console.error("[Shiprocket] Error calculating cuts:", error.message);
+    throw new Error(
+      `Failed to calculate per-order cuts: ${error.message}`,
+    );
+  }
+}
+
+/**
  * Fetches remittance/settlement data from Shiprocket
  * Primary approach: fetches all settlement batches, then fetches detailed order data from each batch
  * Fallback: if settlements fail, tries orders endpoint with pagination limits
