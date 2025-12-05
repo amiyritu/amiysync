@@ -90,6 +90,24 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
   console.log(
     `  - UTEs: ${shiprocketMapByUte.size}`,
   );
+
+  // Log sample Shiprocket keys for debugging
+  if (shiprocketMapByCefId.size > 0) {
+    const cefKeys = Array.from(shiprocketMapByCefId.keys()).slice(0, 3);
+    console.log(`[Merge] Sample Shiprocket Channel Order IDs: ${cefKeys.join(", ")}`);
+  }
+  if (shiprocketMapByOrderId.size > 0) {
+    const orderIds = Array.from(shiprocketMapByOrderId.keys()).slice(0, 3);
+    console.log(`[Merge] Sample Shiprocket Order IDs: ${orderIds.join(", ")}`);
+  }
+
+  // Log sample Shopify keys for debugging
+  if (shopifyRows.length > 0) {
+    console.log(
+      `[Merge] Sample Shopify Order IDs: ${shopifyRows.slice(0, 3).map((r) => r[0]).join(", ")}`,
+    );
+  }
+
   console.log(
     `[Merge] Matching strategy: channel_order_id (Shopify) → shiprocket_order_id → ute → no match`,
   );
