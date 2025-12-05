@@ -22,6 +22,7 @@ function createShopifyApi() {
       "X-Shopify-Access-Token": token,
       "Content-Type": "application/json",
     },
+    timeout: 15000, // 15 second timeout per request
   });
 }
 
