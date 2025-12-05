@@ -353,9 +353,26 @@ export async function getRemittanceData() {
           `[Shiprocket] Fallback: Found ${orders.length} orders from orders endpoint`,
         );
 
+        // Log sample order structure for debugging
+        if (orders.length > 0) {
+          console.log(
+            `[Shiprocket] Sample fallback order structure (first order):`,
+            JSON.stringify(orders[0], null, 2).substring(0, 500),
+          );
+        }
+
         orders.forEach((order) => {
           try {
+            // Try to find matching ID field: cef_id, ute, order_id, id
+            const cefId = safeParseString(
+              order.cef_id || order.CEF_ID,
+              order.order_id || order.id || "",
+            );
+            const ute = safeParseString(order.ute || order.UTE, "");
+
             const row = [
+              cefId, // cef_id (primary match key)
+              ute, // ute (secondary match key)
               safeParseString(order.order_id, order.id || ""), // order_id
               safeParseString(order.awb, order.tracking_number || ""), // awb
               safeParseFloat(order.order_amount || order.total, 0), // order_amount
