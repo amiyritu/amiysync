@@ -144,39 +144,45 @@ export async function shiprocketGet(path, params = {}) {
 }
 
 /**
- * Fetches all orders from Shiprocket
- * Maps each order to a row format for Shiprocket_Settlements sheet
- * @returns {Promise<Array>} Array of settlement order rows
+ * Fetches remittance/settlement data from Shiprocket
+ * Maps each settlement to a row format for Shiprocket_Settlements sheet
+ * @returns {Promise<Array>} Array of settlement rows
  */
 export async function getRemittanceData() {
   const settlements = [];
 
   try {
-    console.log("[Shiprocket] Fetching orders for reconciliation...");
-    const ordersResponse = await shiprocketGet("/v1/external/orders");
+    console.log("[Shiprocket] Fetching remittance data...");
+    const remittanceResponse = await shiprocketGet("/v1/external/remittance");
 
-    const orders = ordersResponse.data || ordersResponse || [];
-    console.log(`[Shiprocket] Found ${orders.length} orders`);
+    let remittances = remittanceResponse.data || remittanceResponse || [];
 
-    // Map each order to the Shiprocket_Settlements row format
-    orders.forEach((order) => {
+    // Handle paginated response
+    if (remittanceResponse.results) {
+      remittances = remittanceResponse.results;
+    }
+
+    console.log(`[Shiprocket] Found ${remittances.length} remittance entries`);
+
+    // Map each remittance entry to the Shiprocket_Settlements row format
+    remittances.forEach((entry) => {
       const row = [
-        order.order_id || order.id, // order_id
-        order.awb || "", // awb
-        parseFloat(order.order_amount) || 0, // order_amount
-        parseFloat(order.shipping_charges) || 0, // shipping_fee
-        parseFloat(order.cod_charges) || 0, // cod_fee
-        parseFloat(order.adjustments) || 0, // adjustments
-        parseFloat(order.rto_reversal) || 0, // rto_reversal
-        parseFloat(order.net_settlement) || 0, // net_remitted
-        order.date || new Date().toISOString().split("T")[0], // remittance_date
-        order.crf_id || "", // crf_id
+        entry.order_id || entry.id || "", // order_id
+        entry.awb || entry.tracking_number || "", // awb
+        parseFloat(entry.order_amount || entry.amount || 0), // order_amount
+        parseFloat(entry.shipping_charges || entry.shipping_fee || 0), // shipping_fee
+        parseFloat(entry.cod_charges || entry.cod_fee || 0), // cod_fee
+        parseFloat(entry.adjustments || 0), // adjustments
+        parseFloat(entry.rto_reversal || 0), // rto_reversal
+        parseFloat(entry.net_settlement || entry.net_amount || 0), // net_remitted
+        entry.date || entry.remittance_date || new Date().toISOString().split("T")[0], // remittance_date
+        entry.crf_id || entry.batch_id || "", // crf_id
       ];
       settlements.push(row);
     });
 
     console.log(
-      `[Shiprocket] Total settlement rows fetched: ${settlements.length}`,
+      `[Shiprocket] Total remittance rows fetched: ${settlements.length}`,
     );
     return settlements;
   } catch (error) {
