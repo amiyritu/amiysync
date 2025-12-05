@@ -74,6 +74,9 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     mismatches: 0,
     pendingRemittance: 0,
     prepaidNoRemittance: 0,
+    matchedByName: 0,
+    matchedById: 0,
+    matchedByNone: 0,
   };
 
   shopifyRows.forEach((orderRow) => {
