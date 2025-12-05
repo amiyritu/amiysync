@@ -43,13 +43,34 @@ export const handleComplete: RequestHandler = async (req, res) => {
       `[Complete] Generated ${reconciliationData.length} reconciliation rows`,
     );
 
-    // Step 4: Write to Google Sheets (in parallel for speed)
-    console.log("[Complete] Step 4: Writing to Google Sheets...");
-    await Promise.all([
+    // Step 4: Calculate per-order Shiprocket cuts (optional, won't block main reconciliation if it times out)
+    let shiprocketCuts: any[] = [];
+    try {
+      console.log("[Complete] Step 4a: Calculating per-order Shiprocket cuts...");
+      shiprocketCuts = await calculatePerOrderCuts();
+      console.log(
+        `[Complete] Calculated cuts for ${shiprocketCuts.length} shipments`,
+      );
+    } catch (cutsError) {
+      const cutsErrorMsg = cutsError instanceof Error ? cutsError.message : String(cutsError);
+      console.warn(
+        `[Complete] Warning: Failed to calculate cuts (non-blocking): ${cutsErrorMsg}`,
+      );
+    }
+
+    // Step 5: Write to Google Sheets (in parallel for speed)
+    console.log("[Complete] Step 4b/5: Writing to Google Sheets...");
+    const sheetsWrites = [
       clearAndWriteSheet("Shopify_Orders", shopifyOrders),
       clearAndWriteSheet("Shiprocket_Settlements", shiprocketSettlements),
       clearAndWriteSheet("Reconciliation", reconciliationData),
-    ]);
+    ];
+
+    if (shiprocketCuts.length > 0) {
+      sheetsWrites.push(clearAndWriteSheet("Shiprocket_Cuts", shiprocketCuts));
+    }
+
+    await Promise.all(sheetsWrites);
 
     const endTime = new Date();
     const duration = (endTime.getTime() - startTime) / 1000;
