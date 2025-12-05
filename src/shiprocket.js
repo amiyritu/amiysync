@@ -87,6 +87,7 @@ export async function shiprocketGet(path, params = {}) {
         return response.data;
       } catch (retryError) {
         console.error("[Shiprocket] Retry failed:", retryError.message);
+        console.error("[Shiprocket] Retry error details:", retryError);
         throw new Error(
           `Shiprocket API call failed after token refresh: ${retryError.message}`,
         );
@@ -98,6 +99,7 @@ export async function shiprocketGet(path, params = {}) {
       throw new Error(`Shiprocket API error (${status}): ${message}`);
     } else {
       console.error("[Shiprocket] Network error:", error.message);
+      console.error("[Shiprocket] Network error details:", error);
       throw new Error(`Shiprocket network error: ${error.message}`);
     }
   }
