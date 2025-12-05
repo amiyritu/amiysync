@@ -2,10 +2,7 @@
 app = "fusion-reconciliation"
 
 [build]
-  builder = "paackages"
-
-[build.args]
-  NODE_ENV = "production"
+  builder = "docker"
 
 [env]
   LOG_LEVEL = "debug"
