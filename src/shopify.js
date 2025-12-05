@@ -60,6 +60,7 @@ export async function getAllShopifyOrders() {
       fetchedOrders.forEach((order) => {
         const row = [
           order.id, // order_id
+          order.name || "", // order_name (e.g., "#1001")
           order.created_at, // order_date
           `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim(), // customer_name
           order.gateway || "", // payment_method
