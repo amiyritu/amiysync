@@ -315,29 +315,54 @@ export async function getRemittanceData() {
       console.log(
         "[Shiprocket] Fetching settlement batch list from /v1/external/settlements...",
       );
-      const settlementResponse = await shiprocketGet(
-        "/v1/external/settlements",
-      );
 
-      // Handle different response structures for batch list
-      if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
-        batches = settlementResponse.data;
-      } else if (
-        settlementResponse.data &&
-        Array.isArray(settlementResponse.data.batches)
-      ) {
-        batches = settlementResponse.data.batches;
-      } else if (Array.isArray(settlementResponse)) {
-        batches = settlementResponse;
-      } else {
-        console.warn(
-          "[Shiprocket] Unexpected settlement response structure:",
-          typeof settlementResponse,
+      // Fetch all settlement batches with pagination
+      let page = 1;
+      let hasMore = true;
+      const pageSize = 100;
+
+      while (hasMore) {
+        console.log(
+          `[Shiprocket] Fetching settlement batches page ${page} (size: ${pageSize})...`,
         );
-        batches = [];
+        const settlementResponse = await shiprocketGet(
+          "/v1/external/settlements",
+          { page, per_page: pageSize },
+        );
+
+        let pageResults = [];
+        // Handle different response structures for batch list
+        if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
+          pageResults = settlementResponse.data;
+        } else if (
+          settlementResponse.data &&
+          Array.isArray(settlementResponse.data.batches)
+        ) {
+          pageResults = settlementResponse.data.batches;
+        } else if (Array.isArray(settlementResponse)) {
+          pageResults = settlementResponse;
+        } else {
+          console.warn(
+            `[Shiprocket] Unexpected settlement response structure on page ${page}:`,
+            typeof settlementResponse,
+          );
+          pageResults = [];
+        }
+
+        batches.push(...pageResults);
+        console.log(
+          `[Shiprocket] Page ${page}: fetched ${pageResults.length} batch(es) (total so far: ${batches.length})`,
+        );
+
+        // Check if there are more pages
+        if (pageResults.length < pageSize) {
+          hasMore = false;
+        } else {
+          page++;
+        }
       }
 
-      console.log(`[Shiprocket] Found ${batches.length} settlement batch(es)`);
+      console.log(`[Shiprocket] Total settlement batch(es) found: ${batches.length}`);
 
       // Fetch details for each batch
       if (batches.length > 0) {
