@@ -2,7 +2,7 @@ import { google } from "googleapis";
 
 let sheetsApi = null;
 
-function initializeSheetsApi() {
+export function initializeSheetsApi() {
   if (sheetsApi) {
     return sheetsApi;
   }
@@ -46,7 +46,7 @@ function initializeSheetsApi() {
   return sheetsApi;
 }
 
-function getSheetId() {
+export function getSheetId() {
   const id = process.env.GOOGLE_SHEETS_ID;
   if (!id) {
     throw new Error("Missing GOOGLE_SHEETS_ID environment variable");
