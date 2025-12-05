@@ -466,51 +466,48 @@ export async function getRemittanceData() {
       }
     } catch (primaryError) {
       console.log(
-        "[Shiprocket] Primary orders approach failed, attempting settlement batches fallback:",
+        "[Shiprocket] Settlement batches approach failed, attempting fallback to /v1/external/orders:",
         primaryError.message,
       );
 
       try {
-        // Fallback: Try settlement batches (slower but more detailed)
-        let batches = [];
-
-        console.log(
-          "[Shiprocket] Fetching settlement batch list from /v1/external/settlements...",
-        );
-
+        // Fallback: Use orders endpoint as last resort
+        let orders = [];
         let page = 1;
         let hasMore = true;
         const pageSize = 100;
 
-        while (hasMore && page <= MAX_PAGES) {
+        while (hasMore && page <= 3) {
           if (Date.now() - startTime > MAX_WAIT_TIME) {
-            console.log("[Shiprocket] Timeout approaching, stopping batch fetch");
+            console.log(
+              "[Shiprocket] Timeout approaching, stopping fallback fetch at page " + page,
+            );
             break;
           }
 
           console.log(
-            `[Shiprocket] Fetching settlement batches page ${page}...`,
+            `[Shiprocket] Fallback: Fetching orders page ${page}...`,
           );
-          const settlementResponse = await shiprocketGet(
-            "/v1/external/settlements",
-            { page, per_page: pageSize },
-          );
+          const ordersResponse = await shiprocketGet("/v1/external/orders", {
+            page,
+            per_page: pageSize,
+          });
 
           let pageResults = [];
-          if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
-            pageResults = settlementResponse.data;
+          if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
+            pageResults = ordersResponse.data;
           } else if (
-            settlementResponse.data &&
-            Array.isArray(settlementResponse.data.batches)
+            ordersResponse.data &&
+            Array.isArray(ordersResponse.data.results)
           ) {
-            pageResults = settlementResponse.data.batches;
-          } else if (Array.isArray(settlementResponse)) {
-            pageResults = settlementResponse;
+            pageResults = ordersResponse.data.results;
+          } else if (Array.isArray(ordersResponse)) {
+            pageResults = ordersResponse;
           }
 
-          batches.push(...pageResults);
+          orders.push(...pageResults);
           console.log(
-            `[Shiprocket] Page ${page}: fetched ${pageResults.length} batch(es)`,
+            `[Shiprocket] Fallback page ${page}: fetched ${pageResults.length} orders`,
           );
 
           if (pageResults.length < pageSize) {
@@ -520,49 +517,72 @@ export async function getRemittanceData() {
           }
         }
 
-        console.log(
-          `[Shiprocket] Total settlement batches found: ${batches.length}`,
-        );
-
-        // Fetch limited number of batch details
-        const batchesToProcess = Math.min(batches.length, 2);
-        for (let i = 0; i < batchesToProcess; i++) {
-          if (Date.now() - startTime > MAX_WAIT_TIME) {
-            console.log(
-              "[Shiprocket] Timeout approaching, stopping batch detail fetch",
-            );
-            break;
-          }
-
-          const batch = batches[i];
-          const batchId = safeParseString(
-            batch.id,
-            batch.batch_id || batch.crf_id || "",
-          );
-
-          if (!batchId) continue;
-
+        orders.forEach((order) => {
           try {
-            const batchOrders = await getSettlementBatchDetails(batchId);
-            settlements.push(...batchOrders);
-          } catch (batchError) {
+            const channelOrderId = safeParseString(
+              order.channel_order_id,
+              order.cef_id || order.CEF_ID || order.order_id || order.id || "",
+            );
+
+            const ute = safeParseString(
+              order.ute || order.UTE || order.last_mile_awb || "",
+              "",
+            );
+
+            const shippingCharges = safeParseFloat(
+              order.shipping_charges || order.shipping || 0,
+              0,
+            );
+            const totalFreightCharge = safeParseFloat(
+              order.total_freight_charge || order.shipping_charges || 0,
+              shippingCharges,
+            );
+
+            const row = [
+              channelOrderId,
+              ute,
+              safeParseString(order.order_id || order.id || "", ""),
+              safeParseString(
+                order.awb || order.last_mile_awb || order.tracking_number || "",
+                "",
+              ),
+              safeParseFloat(
+                order.order_amount || order.total || order.base_amount || 0,
+                0,
+              ),
+              shippingCharges,
+              safeParseFloat(order.cod_charges || order.cod || 0, 0),
+              safeParseFloat(order.adjustments || 0, 0),
+              safeParseFloat(order.rto_reversal || order.rto || 0, 0),
+              safeParseFloat(order.net_settlement || order.net_amount || 0, 0),
+              safeParseString(
+                order.date ||
+                  order.created_at ||
+                  new Date().toISOString().split("T")[0],
+                new Date().toISOString().split("T")[0],
+              ),
+              safeParseString(order.batch_id || order.crf_id || "", ""),
+              totalFreightCharge,
+            ];
+            settlements.push(row);
+          } catch (orderError) {
             console.error(
-              `[Shiprocket] Failed to fetch batch ${batchId}:`,
-              batchError.message,
+              `[Shiprocket] Error processing fallback order:`,
+              orderError.message,
             );
           }
-        }
+        });
 
         if (settlements.length === 0) {
-          throw new Error("No settlement data from any approach");
+          throw new Error("No orders found in fallback endpoint");
         }
       } catch (fallbackError) {
         console.error(
-          "[Shiprocket] Both approaches failed:",
+          "[Shiprocket] Fallback also failed:",
           fallbackError.message,
         );
         throw new Error(
-          `Failed to fetch Shiprocket data: ${fallbackError.message}`,
+          `All approaches failed: ${fallbackError.message}`,
         );
       }
     }
