@@ -46,6 +46,12 @@ export default function Index() {
   const [shiprocketTotalItems, setShiprocketTotalItems] = useState(0);
   const [shiprocketLoading, setShiprocketLoading] = useState(false);
 
+  const [shiprocketCutsResults, setShiprocketCutsResults] = useState<any[]>([]);
+  const [shiprocketCutsPage, setShiprocketCutsPage] = useState(1);
+  const [shiprocketCutsTotalPages, setShiprocketCutsTotalPages] = useState(0);
+  const [shiprocketCutsTotalItems, setShiprocketCutsTotalItems] = useState(0);
+  const [shiprocketCutsLoading, setShiprocketCutsLoading] = useState(false);
+
   // Progress tracking state
   const [progressSteps, setProgressSteps] = useState<ProgressStep[]>([
     { label: "Fetching Shopify orders", status: "pending" },
