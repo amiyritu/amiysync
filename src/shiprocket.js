@@ -376,7 +376,9 @@ export async function getRemittanceData() {
       if (batches.length > 0) {
         for (const batch of batches) {
           if (Date.now() - startTime > MAX_WAIT_TIME) {
-            console.log("[Shiprocket] Timeout approaching, stopping batch detail fetch");
+            console.log(
+              "[Shiprocket] Timeout approaching, stopping batch detail fetch",
+            );
             break;
           }
 
@@ -426,7 +428,10 @@ export async function getRemittanceData() {
 
         while (hasMore && page <= MAX_PAGES) {
           if (Date.now() - startTime > MAX_WAIT_TIME) {
-            console.log("[Shiprocket] Timeout approaching, stopping fallback fetch at page " + page);
+            console.log(
+              "[Shiprocket] Timeout approaching, stopping fallback fetch at page " +
+                page,
+            );
             break;
           }
 

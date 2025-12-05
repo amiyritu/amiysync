@@ -36,10 +36,7 @@ export default async (req, context) => {
     });
 
     // Race between the reconciliation and the timeout
-    const summary = await Promise.race([
-      runReconciliation(),
-      timeoutPromise,
-    ]);
+    const summary = await Promise.race([runReconciliation(), timeoutPromise]);
 
     return new Response(JSON.stringify(summary), {
       status: 200,
