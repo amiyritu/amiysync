@@ -38,10 +38,20 @@ export async function login() {
     console.log(
       "[Shiprocket] Login URL will be: https://apiv2.shiprocket.in/v1/external/auth/login",
     );
-    const response = await shiprocketBaseApi.post("/v1/external/auth/login", {
-      email,
-      password,
-    });
+    const response = await axios.post(
+      "https://apiv2.shiprocket.in/v1/external/auth/login",
+      { email, password },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Accept-Encoding": "gzip, deflate, br",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+        timeout: 30000,
+      },
+    );
 
     if (!response.data || !response.data.token) {
       throw new Error("Login response missing token");
@@ -87,12 +97,17 @@ export async function shiprocketGet(path, params = {}) {
 
   try {
     console.log(`[Shiprocket] GET ${path}`);
-    const response = await shiprocketBaseApi.get(path, {
+    const response = await axios.get(`https://apiv2.shiprocket.in${path}`, {
       params,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
+      timeout: 30000,
     });
 
     return response.data;
@@ -103,12 +118,17 @@ export async function shiprocketGet(path, params = {}) {
       token = await login();
 
       try {
-        const response = await shiprocketBaseApi.get(path, {
+        const response = await axios.get(`https://apiv2.shiprocket.in${path}`, {
           params,
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            Accept: "application/json",
+            "Accept-Encoding": "gzip, deflate, br",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           },
+          timeout: 30000,
         });
         return response.data;
       } catch (retryError) {
@@ -292,29 +312,56 @@ export async function getRemittanceData() {
       console.log(
         "[Shiprocket] Fetching settlement batch list from /v1/external/settlements...",
       );
-      const settlementResponse = await shiprocketGet(
-        "/v1/external/settlements",
-      );
 
-      // Handle different response structures for batch list
-      if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
-        batches = settlementResponse.data;
-      } else if (
-        settlementResponse.data &&
-        Array.isArray(settlementResponse.data.batches)
-      ) {
-        batches = settlementResponse.data.batches;
-      } else if (Array.isArray(settlementResponse)) {
-        batches = settlementResponse;
-      } else {
-        console.warn(
-          "[Shiprocket] Unexpected settlement response structure:",
-          typeof settlementResponse,
+      // Fetch all settlement batches with pagination
+      let page = 1;
+      let hasMore = true;
+      const pageSize = 100;
+
+      while (hasMore) {
+        console.log(
+          `[Shiprocket] Fetching settlement batches page ${page} (size: ${pageSize})...`,
         );
-        batches = [];
+        const settlementResponse = await shiprocketGet(
+          "/v1/external/settlements",
+          { page, per_page: pageSize },
+        );
+
+        let pageResults = [];
+        // Handle different response structures for batch list
+        if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
+          pageResults = settlementResponse.data;
+        } else if (
+          settlementResponse.data &&
+          Array.isArray(settlementResponse.data.batches)
+        ) {
+          pageResults = settlementResponse.data.batches;
+        } else if (Array.isArray(settlementResponse)) {
+          pageResults = settlementResponse;
+        } else {
+          console.warn(
+            `[Shiprocket] Unexpected settlement response structure on page ${page}:`,
+            typeof settlementResponse,
+          );
+          pageResults = [];
+        }
+
+        batches.push(...pageResults);
+        console.log(
+          `[Shiprocket] Page ${page}: fetched ${pageResults.length} batch(es) (total so far: ${batches.length})`,
+        );
+
+        // Check if there are more pages
+        if (pageResults.length < pageSize) {
+          hasMore = false;
+        } else {
+          page++;
+        }
       }
 
-      console.log(`[Shiprocket] Found ${batches.length} settlement batch(es)`);
+      console.log(
+        `[Shiprocket] Total settlement batch(es) found: ${batches.length}`,
+      );
 
       // Fetch details for each batch
       if (batches.length > 0) {
@@ -357,22 +404,48 @@ export async function getRemittanceData() {
       );
 
       try {
-        const ordersResponse = await shiprocketGet("/v1/external/orders");
-
+        // Fetch all orders with pagination
         let orders = [];
-        if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
-          orders = ordersResponse.data;
-        } else if (
-          ordersResponse.data &&
-          Array.isArray(ordersResponse.data.results)
-        ) {
-          orders = ordersResponse.data.results;
-        } else if (Array.isArray(ordersResponse)) {
-          orders = ordersResponse;
+        let page = 1;
+        let hasMore = true;
+        const pageSize = 100;
+
+        while (hasMore) {
+          console.log(
+            `[Shiprocket] Fallback: Fetching orders page ${page} (size: ${pageSize})...`,
+          );
+          const ordersResponse = await shiprocketGet("/v1/external/orders", {
+            page,
+            per_page: pageSize,
+          });
+
+          let pageResults = [];
+          if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
+            pageResults = ordersResponse.data;
+          } else if (
+            ordersResponse.data &&
+            Array.isArray(ordersResponse.data.results)
+          ) {
+            pageResults = ordersResponse.data.results;
+          } else if (Array.isArray(ordersResponse)) {
+            pageResults = ordersResponse;
+          }
+
+          orders.push(...pageResults);
+          console.log(
+            `[Shiprocket] Fallback page ${page}: fetched ${pageResults.length} orders (total so far: ${orders.length})`,
+          );
+
+          // Check if there are more pages
+          if (pageResults.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
         }
 
         console.log(
-          `[Shiprocket] Fallback: Found ${orders.length} orders from orders endpoint`,
+          `[Shiprocket] Fallback: Total orders found: ${orders.length}`,
         );
 
         // Log sample order structure for debugging

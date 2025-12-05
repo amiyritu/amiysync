@@ -6,15 +6,12 @@
  * @returns {string} Reconciliation status
  */
 function determineStatus(isCod, hasSettlement, difference) {
-  if (!isCod) {
-    return "Prepaid - No Remittance";
-  }
-
+  // If no settlement data exists, determine status based on order type
   if (!hasSettlement) {
-    return "Pending Remittance";
+    return isCod ? "Pending Remittance" : "Prepaid - No Remittance";
   }
 
-  // For COD orders with settlements, check if amounts match (tolerance: $0.50)
+  // For orders with settlements, check if amounts match (tolerance: $0.50)
   if (Math.abs(difference) < 0.5) {
     return "Reconciled";
   }
