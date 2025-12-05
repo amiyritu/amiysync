@@ -10,9 +10,10 @@
 [functions]
   node_bundler = "esbuild"
   directory = "netlify/functions"
+  timeout = 26
 
 [[redirects]]
   force = true
   from = "/api/*"
   status = 200
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/api"

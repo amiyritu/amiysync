@@ -22,6 +22,7 @@ function createShopifyApi() {
       "X-Shopify-Access-Token": token,
       "Content-Type": "application/json",
     },
+    timeout: 15000, // 15 second timeout per request
   });
 }
 
@@ -35,9 +36,18 @@ export async function getAllShopifyOrders() {
   const orders = [];
   let hasNextPage = true;
   let pageInfo = null;
+  const MAX_FETCH_TIME = 23000; // 23 second limit to leave buffer for handler
+  const startTime = Date.now();
 
   try {
     while (hasNextPage) {
+      // Check if we're approaching the timeout
+      if (Date.now() - startTime > MAX_FETCH_TIME) {
+        console.log("[Shopify] Timeout approaching, stopping pagination");
+        hasNextPage = false;
+        break;
+      }
+
       const params = {
         limit: 250,
       };

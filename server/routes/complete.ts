@@ -5,7 +5,7 @@ import { mergeDatasets } from "../../src/merge.js";
 import { clearAndWriteSheet } from "../../src/sheets.js";
 
 export const handleComplete: RequestHandler = async (req, res) => {
-  const timeoutMs = 28000;
+  const timeoutMs = 24000; // 24 seconds, well under Netlify's 26 second limit
   const startTime = Date.now();
 
   const timeoutHandle = setTimeout(() => {
