@@ -28,7 +28,9 @@ export const handleShiprocketPaginated: RequestHandler = async (req, res) => {
       !cachedShiprocketData ||
       Date.now() - cachedTimestamp > CACHE_DURATION
     ) {
-      console.log("[Shiprocket Paginated] Fetching fresh settlements from Shiprocket API");
+      console.log(
+        "[Shiprocket Paginated] Fetching fresh settlements from Shiprocket API",
+      );
       cachedShiprocketData = await getRemittanceData();
       cachedTimestamp = Date.now();
     } else {

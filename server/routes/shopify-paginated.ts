@@ -24,10 +24,7 @@ export const handleShopifyPaginated: RequestHandler = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
 
     // Fetch orders (use cache if available and fresh)
-    if (
-      !cachedShopifyOrders ||
-      Date.now() - cachedTimestamp > CACHE_DURATION
-    ) {
+    if (!cachedShopifyOrders || Date.now() - cachedTimestamp > CACHE_DURATION) {
       console.log("[Shopify Paginated] Fetching fresh orders from Shopify API");
       cachedShopifyOrders = await getAllShopifyOrders();
       cachedTimestamp = Date.now();

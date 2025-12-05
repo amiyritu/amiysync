@@ -207,7 +207,10 @@ export default function Index() {
   };
 
   // Progress tracking helpers
-  const updateProgressStep = (index: number, status: ProgressStep["status"]) => {
+  const updateProgressStep = (
+    index: number,
+    status: ProgressStep["status"],
+  ) => {
     setProgressSteps((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], status };
