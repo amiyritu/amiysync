@@ -92,7 +92,28 @@ export async function getAllShopifyOrders() {
     console.log(`[Shopify] Total orders fetched: ${orders.length}`);
     return orders;
   } catch (error) {
-    console.error("[Shopify] Error fetching orders:", error.message);
-    throw new Error(`Failed to fetch Shopify orders: ${error.message}`);
+    const domain = process.env.SHOPIFY_STORE_DOMAIN || "NOT_SET";
+    const errorDetails =
+      error.response?.data || error.response?.status || error.message;
+
+    console.error("[Shopify] Error details:", {
+      domain,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: errorDetails,
+      message: error.message,
+    });
+
+    const statusCode = error.response?.status || "unknown";
+    const suggestion =
+      statusCode === 400
+        ? "Check that SHOPIFY_STORE_DOMAIN (e.g., 'store.myshopify.com' without https://) and SHOPIFY_ADMIN_TOKEN are correct."
+        : statusCode === 401
+          ? "SHOPIFY_ADMIN_TOKEN is invalid or expired."
+          : "";
+
+    throw new Error(
+      `Failed to fetch Shopify orders (${statusCode}): ${error.message}. ${suggestion}`,
+    );
   }
 }
