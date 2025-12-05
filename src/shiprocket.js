@@ -103,7 +103,11 @@ export async function shiprocketGet(path, params = {}) {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          Accept: "application/json",
+          "Accept-Encoding": "gzip, deflate, br",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         },
+        timeout: 30000,
       },
     );
 
@@ -122,7 +126,11 @@ export async function shiprocketGet(path, params = {}) {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
+              Accept: "application/json",
+              "Accept-Encoding": "gzip, deflate, br",
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             },
+            timeout: 30000,
           },
         );
         return response.data;
