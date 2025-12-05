@@ -6,6 +6,7 @@ import { handleHealthCheck } from "./routes/health-check";
 import { handleReconcile } from "./routes/reconcile";
 import { handleShopifyPaginated } from "./routes/shopify-paginated";
 import { handleShiprocketPaginated } from "./routes/shiprocket-paginated";
+import { handleShiprocketCutsPaginated } from "./routes/shiprocket-cuts-paginated";
 import { handleComplete } from "./routes/complete";
 import { handleDiagnostic } from "./routes/diagnostic";
 
