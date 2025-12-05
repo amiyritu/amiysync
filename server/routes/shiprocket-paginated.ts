@@ -7,13 +7,19 @@ let cachedTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const handleShiprocketPaginated: RequestHandler = async (req, res) => {
-  const timeoutMs = 24000; // 24 seconds, well under Netlify's 26 second limit
+  const timeoutMs = 26000; // 26 seconds, close to deployment's hard limit
   const startTime = Date.now();
 
   const timeoutHandle = setTimeout(() => {
     if (!res.headersSent) {
       res.status(408).json({
         status: "error",
+        items: [],
+        page: 1,
+        perPage: ITEMS_PER_PAGE,
+        totalItems: 0,
+        totalPages: 0,
+        hasNext: false,
         message: "Shiprocket fetch timeout: operation took too long",
         timestamp: new Date().toISOString(),
       });
