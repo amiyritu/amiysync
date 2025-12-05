@@ -1,21 +1,29 @@
 import axios from "axios";
 
-const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
-const SHOPIFY_ADMIN_TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
+function getShopifyConfig() {
+  const domain = process.env.SHOPIFY_STORE_DOMAIN;
+  const token = process.env.SHOPIFY_ADMIN_TOKEN;
 
-if (!SHOPIFY_STORE_DOMAIN || !SHOPIFY_ADMIN_TOKEN) {
-  throw new Error(
-    "Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_ADMIN_TOKEN environment variables",
-  );
+  if (!domain || !token) {
+    throw new Error(
+      "Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_ADMIN_TOKEN environment variables",
+    );
+  }
+
+  return { domain, token };
 }
 
-const shopifyApi = axios.create({
-  baseURL: `https://${SHOPIFY_STORE_DOMAIN}/admin/api/2023-10`,
-  headers: {
-    "X-Shopify-Access-Token": SHOPIFY_ADMIN_TOKEN,
-    "Content-Type": "application/json",
-  },
-});
+function createShopifyApi() {
+  const { domain, token } = getShopifyConfig();
+
+  return axios.create({
+    baseURL: `https://${domain}/admin/api/2023-10`,
+    headers: {
+      "X-Shopify-Access-Token": token,
+      "Content-Type": "application/json",
+    },
+  });
+}
 
 /**
  * Fetches all Shopify orders with pagination
@@ -23,6 +31,7 @@ const shopifyApi = axios.create({
  * @returns {Promise<Array>} Array of order rows
  */
 export async function getAllShopifyOrders() {
+  const shopifyApi = createShopifyApi();
   const orders = [];
   let hasNextPage = true;
   let pageInfo = null;
@@ -38,7 +47,7 @@ export async function getAllShopifyOrders() {
         params.page_info = pageInfo;
       }
 
-      console.log(`[Shopify] Fetching orders page...`);
+      console.log("[Shopify] Fetching orders page...");
       const response = await shopifyApi.get("/orders.json", { params });
 
       const fetchedOrders = response.data.orders || [];
@@ -53,7 +62,8 @@ export async function getAllShopifyOrders() {
           parseFloat(order.total_price), // order_total
           order.financial_status || "", // financial_status
           order.fulfillment_status || "", // fulfillment_status
-          order.gateway && order.gateway.toLowerCase().includes("cod")
+          order.gateway &&
+          order.gateway.toLowerCase().includes("cod")
             ? "COD"
             : "Prepaid", // cod_prepaid
         ];
