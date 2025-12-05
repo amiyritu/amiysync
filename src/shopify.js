@@ -62,8 +62,7 @@ export async function getAllShopifyOrders() {
           parseFloat(order.total_price), // order_total
           order.financial_status || "", // financial_status
           order.fulfillment_status || "", // fulfillment_status
-          order.gateway &&
-          order.gateway.toLowerCase().includes("cod")
+          order.gateway && order.gateway.toLowerCase().includes("cod")
             ? "COD"
             : "Prepaid", // cod_prepaid
         ];

@@ -160,9 +160,10 @@ export async function getRemittanceData() {
     );
     return settlements;
   } catch (error) {
-    console.error("[Shiprocket] Error fetching remittance data:", error.message);
-    throw new Error(
-      `Failed to fetch Shiprocket settlements: ${error.message}`,
+    console.error(
+      "[Shiprocket] Error fetching remittance data:",
+      error.message,
     );
+    throw new Error(`Failed to fetch Shiprocket settlements: ${error.message}`);
   }
 }

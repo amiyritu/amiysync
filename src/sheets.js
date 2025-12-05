@@ -102,7 +102,9 @@ export async function writeToSheet(range, values) {
         values,
       },
     });
-    console.log(`[Sheets] Successfully wrote ${values.length} rows to ${range}`);
+    console.log(
+      `[Sheets] Successfully wrote ${values.length} rows to ${range}`,
+    );
   } catch (error) {
     console.error(`[Sheets] Error writing to ${range}:`, error.message);
     throw new Error(`Failed to write to sheet: ${error.message}`);
@@ -124,7 +126,10 @@ export async function clearAndWriteSheet(tabName, values) {
     await clearSheetData(clearRange);
     await writeToSheet(writeRange, values);
   } catch (error) {
-    console.error(`[Sheets] Error in clearAndWriteSheet for ${tabName}:`, error.message);
+    console.error(
+      `[Sheets] Error in clearAndWriteSheet for ${tabName}:`,
+      error.message,
+    );
     throw error;
   }
 }
