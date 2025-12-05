@@ -38,10 +38,11 @@ export async function login() {
     console.log(
       "[Shiprocket] Login URL will be: https://apiv2.shiprocket.in/v1/external/auth/login",
     );
-    const response = await shiprocketBaseApi.post("/v1/external/auth/login", {
-      email,
-      password,
-    });
+    const response = await axios.post(
+      "https://apiv2.shiprocket.in/v1/external/auth/login",
+      { email, password },
+      { headers: { "Content-Type": "application/json" } },
+    );
 
     if (!response.data || !response.data.token) {
       throw new Error("Login response missing token");
