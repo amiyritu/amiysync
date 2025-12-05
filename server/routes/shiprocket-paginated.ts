@@ -7,10 +7,12 @@ let cachedTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const handleShiprocketPaginated: RequestHandler = async (req, res) => {
-  const timeoutMs = 24000; // 24 seconds, well under Netlify's 26 second limit
+  const timeoutMs = 28000; // 28 seconds (Shiprocket API is slow with large datasets)
   const startTime = Date.now();
+  let timeoutTriggered = false;
 
   const timeoutHandle = setTimeout(() => {
+    timeoutTriggered = true;
     if (!res.headersSent) {
       res.status(408).json({
         status: "error",
