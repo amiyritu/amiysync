@@ -1,5 +1,6 @@
 /**
  * Determines the reconciliation status based on order type and settlement match
+ * Tolerance set to $0.50 to account for rounding differences and minor discrepancies
  * @param {boolean} isCod - Whether the order is COD
  * @param {boolean} hasSettlement - Whether there's a settlement record
  * @param {number} difference - Difference between Shopify total and Shiprocket net
@@ -11,11 +12,15 @@ function determineStatus(isCod, hasSettlement, difference) {
     return isCod ? "Pending Remittance" : "Prepaid - No Remittance";
   }
 
-  // For orders with settlements, check if amounts match (tolerance: $0.50)
-  if (Math.abs(difference) < 0.5) {
+  // For orders with settlements, check if amounts match
+  // Tolerance: $0.50 to account for rounding, currency conversion, or minor adjustments
+  const tolerance = 0.50;
+
+  if (Math.abs(difference) <= tolerance) {
     return "Reconciled";
   }
 
+  // If difference is significant, mark as mismatch for manual review
   return "Mismatch";
 }
 
