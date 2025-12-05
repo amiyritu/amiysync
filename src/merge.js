@@ -160,15 +160,17 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         stats.prepaidNoRemittance++;
       }
 
-      // Build detailed reconciliation row
+      // Build detailed reconciliation row with both ID and name for clarity
       const reconciliationRow = [
         orderIdString, // order_id
+        orderName, // order_name (human-readable)
         orderDate, // order_date
         shopifyTotal, // shopify_order_total
         shiprocketNet, // shiprocket_net_received
         difference, // difference (Shopify - Shiprocket)
         codPrepaidStatus, // cod_prepaid
         status, // status
+        matchMethod, // match_method (id, name, or none)
         awb, // awb
         shippingCharges, // shipping_charges
         codCharges, // cod_charges
