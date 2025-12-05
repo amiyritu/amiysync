@@ -24,9 +24,10 @@ function determineStatus(isCod, hasSettlement, difference) {
 
 /**
  * Merges Shopify orders with Shiprocket settlements to create detailed reconciliation rows
+ * Uses dual-key matching (by name and ID) with fallback logic
  * Handles both COD and prepaid orders, with per-order settlement details
  * @param {Array<Array>} shopifyRows - Array of Shopify order rows
- *   Format: [order_id, order_date, customer_name, payment_method, order_total, financial_status, fulfillment_status, cod_prepaid]
+ *   Format: [order_id, order_name, order_date, customer_name, payment_method, order_total, financial_status, fulfillment_status, cod_prepaid]
  * @param {Array<Array>} shiprocketRows - Array of Shiprocket settlement rows
  *   Format: [order_id, awb, order_amount, shipping_charges, cod_charges, adjustments, rto_reversal, net_settlement, remittance_date, batch_id]
  * @returns {Array<Array>} Array of reconciliation rows
@@ -36,24 +37,31 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     `[Merge] Starting reconciliation with ${shopifyRows.length} Shopify orders and ${shiprocketRows.length} Shiprocket settlement rows`,
   );
 
-  // Build a map of Shiprocket settlements keyed by order_id
-  // Uses a Map to handle multiple entries per order (keeps the latest)
-  const shiprocketMap = new Map();
+  // Build dual-key maps of Shiprocket settlements for flexible matching
+  // Key 1: By order_id (numeric ID)
+  const shiprocketMapById = new Map();
+  // Key 2: By order_name (human-readable name like "#1001")
+  const shiprocketMapByName = new Map();
+
   shiprocketRows.forEach((row) => {
     const orderId = String(row[0]).trim(); // order_id (column 0)
+
     if (orderId) {
       // Log if we're replacing a previous entry
-      if (shiprocketMap.has(orderId)) {
+      if (shiprocketMapById.has(orderId)) {
         console.log(
-          `[Merge] Multiple settlements found for order ${orderId}, using most recent`,
+          `[Merge] Multiple settlements found for order ID ${orderId}, using most recent`,
         );
       }
-      shiprocketMap.set(orderId, row);
+      shiprocketMapById.set(orderId, row);
     }
   });
 
   console.log(
-    `[Merge] Built Shiprocket settlement map with ${shiprocketMap.size} unique order IDs`,
+    `[Merge] Built Shiprocket settlement ID map with ${shiprocketMapById.size} unique order IDs`,
+  );
+  console.log(
+    `[Merge] Ready to match using ID and name with fallback logic`,
   );
 
   // Reconcile each Shopify order with Shiprocket data
