@@ -192,6 +192,13 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         stats.matchedById++;
       } else if (matchMethod === "ute") {
         stats.matchedByNone++;
+      } else if (matchMethod === "none") {
+        // Log first few unmatched orders for debugging
+        if (stats.matchedByNone + stats.matchedByName + stats.matchedById < 5) {
+          console.log(
+            `[Merge] Unmatched Shopify order: ID=${orderIdString}, Name=${orderName}, Name(no#)=${orderName.replace(/^#/, "")}`,
+          );
+        }
       }
 
       const hasSettlement = !!settlement;
