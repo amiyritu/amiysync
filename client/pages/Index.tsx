@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, CheckCircle, AlertCircle, Clock, Play } from "lucide-react";
 import { ReconciliationResponse } from "@shared/api";
+import { ApiHealthCheck } from "../components/ApiHealthCheck";
 
 export default function Index() {
   const [reconciliationStatus, setReconciliationStatus] =
