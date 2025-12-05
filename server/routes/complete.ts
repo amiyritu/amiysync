@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { getAllShopifyOrders } from "../../src/shopify.js";
-import { getRemittanceData } from "../../src/shiprocket.js";
+import { getRemittanceData, calculatePerOrderCuts } from "../../src/shiprocket.js";
 import { mergeDatasets } from "../../src/merge.js";
 import { clearAndWriteSheet } from "../../src/sheets.js";
 
