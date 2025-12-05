@@ -204,6 +204,10 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
   console.log(`  - Mismatches (COD): ${stats.mismatches}`);
   console.log(`  - Pending Remittance (COD): ${stats.pendingRemittance}`);
   console.log(`  - Prepaid - No Remittance: ${stats.prepaidNoRemittance}`);
+  console.log("[Merge] Matching Strategy Results:");
+  console.log(`  - Matched by Name: ${stats.matchedByName}`);
+  console.log(`  - Matched by ID: ${stats.matchedById}`);
+  console.log(`  - Not Matched: ${stats.matchedByNone}`);
 
   return reconciliation;
 }
