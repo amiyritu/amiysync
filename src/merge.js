@@ -179,14 +179,14 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
       let batchId = "";
 
       if (settlement) {
-        shiprocketNet = parseFloat(settlement[7]) || 0; // net_settlement (column 7)
-        awb = settlement[1] || ""; // awb (column 1)
-        shippingCharges = parseFloat(settlement[3]) || 0; // shipping_charges (column 3)
-        codCharges = parseFloat(settlement[4]) || 0; // cod_charges (column 4)
-        adjustments = parseFloat(settlement[5]) || 0; // adjustments (column 5)
-        rtoReversal = parseFloat(settlement[6]) || 0; // rto_reversal (column 6)
-        remittanceDate = settlement[8] || ""; // remittance_date (column 8)
-        batchId = settlement[9] || ""; // batch_id (column 9)
+        shiprocketNet = parseFloat(settlement[9]) || 0; // net_settlement (column 9)
+        awb = settlement[3] || ""; // awb (column 3)
+        shippingCharges = parseFloat(settlement[5]) || 0; // shipping_charges (column 5)
+        codCharges = parseFloat(settlement[6]) || 0; // cod_charges (column 6)
+        adjustments = parseFloat(settlement[7]) || 0; // adjustments (column 7)
+        rtoReversal = parseFloat(settlement[8]) || 0; // rto_reversal (column 8)
+        remittanceDate = settlement[10] || ""; // remittance_date (column 10)
+        batchId = settlement[11] || ""; // batch_id (column 11)
       }
 
       const difference = shopifyTotal - shiprocketNet;
