@@ -1,14 +1,12 @@
 import path from "path";
-import { createServer } from "./index.mjs";
+import { createServer } from "./index";
 import * as express from "express";
-import { fileURLToPath } from "url";
 
 const app = createServer();
 const port = process.env.PORT || 3000;
 
 // In production, serve the built SPA files
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = import.meta.dirname;
 const distPath = path.join(__dirname, "../spa");
 
 // Serve static files
