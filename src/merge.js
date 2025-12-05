@@ -5,7 +5,9 @@
  * @returns {Array<Array>} Array of reconciliation rows
  */
 export function mergeDatasets(shopifyRows, shiprocketRows) {
-  console.log(`[Merge] Starting reconciliation with ${shopifyRows.length} Shopify orders and ${shiprocketRows.length} Shiprocket rows`);
+  console.log(
+    `[Merge] Starting reconciliation with ${shopifyRows.length} Shopify orders and ${shiprocketRows.length} Shiprocket rows`,
+  );
 
   // Build a map of Shiprocket settlements keyed by order_id
   const shiprocketMap = new Map();
@@ -15,7 +17,9 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     shiprocketMap.set(orderId, row);
   });
 
-  console.log(`[Merge] Built Shiprocket map with ${shiprocketMap.size} unique order IDs`);
+  console.log(
+    `[Merge] Built Shiprocket map with ${shiprocketMap.size} unique order IDs`,
+  );
 
   // Reconcile each Shopify order with Shiprocket data
   const reconciliation = [];
@@ -31,11 +35,11 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
 
     let status;
     if (!sr) {
-      status = 'Pending Remittance';
+      status = "Pending Remittance";
     } else if (Math.abs(diff) < 0.5) {
-      status = 'Reconciled';
+      status = "Reconciled";
     } else {
-      status = 'Mismatch';
+      status = "Mismatch";
     }
 
     const reconciliationRow = [
@@ -44,23 +48,25 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
       shiprocketNet, // shiprocket_net_received
       diff, // difference
       status, // status
-      '', // notes (empty for manual entry)
+      "", // notes (empty for manual entry)
     ];
 
     reconciliation.push(reconciliationRow);
   });
 
   console.log(
-    `[Merge] Reconciliation complete: ${reconciliation.length} rows generated`
+    `[Merge] Reconciliation complete: ${reconciliation.length} rows generated`,
   );
 
   // Log summary statistics
-  const reconciled = reconciliation.filter((r) => r[4] === 'Reconciled').length;
-  const mismatches = reconciliation.filter((r) => r[4] === 'Mismatch').length;
-  const pending = reconciliation.filter((r) => r[4] === 'Pending Remittance').length;
+  const reconciled = reconciliation.filter((r) => r[4] === "Reconciled").length;
+  const mismatches = reconciliation.filter((r) => r[4] === "Mismatch").length;
+  const pending = reconciliation.filter(
+    (r) => r[4] === "Pending Remittance",
+  ).length;
 
   console.log(
-    `[Merge] Summary - Reconciled: ${reconciled}, Mismatches: ${mismatches}, Pending: ${pending}`
+    `[Merge] Summary - Reconciled: ${reconciled}, Mismatches: ${mismatches}, Pending: ${pending}`,
   );
 
   return reconciliation;

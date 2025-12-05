@@ -1,17 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
 
 const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 const SHOPIFY_ADMIN_TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
 
 if (!SHOPIFY_STORE_DOMAIN || !SHOPIFY_ADMIN_TOKEN) {
-  throw new Error('Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_ADMIN_TOKEN environment variables');
+  throw new Error(
+    "Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_ADMIN_TOKEN environment variables",
+  );
 }
 
 const shopifyApi = axios.create({
   baseURL: `https://${SHOPIFY_STORE_DOMAIN}/admin/api/2023-10`,
   headers: {
-    'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN,
-    'Content-Type': 'application/json',
+    "X-Shopify-Access-Token": SHOPIFY_ADMIN_TOKEN,
+    "Content-Type": "application/json",
   },
 });
 
@@ -29,7 +31,7 @@ export async function getAllShopifyOrders() {
     while (hasNextPage) {
       const params = {
         limit: 250,
-        status: 'any',
+        status: "any",
       };
 
       if (pageInfo) {
@@ -37,7 +39,7 @@ export async function getAllShopifyOrders() {
       }
 
       console.log(`[Shopify] Fetching orders page...`);
-      const response = await shopifyApi.get('/orders.json', { params });
+      const response = await shopifyApi.get("/orders.json", { params });
 
       const fetchedOrders = response.data.orders || [];
 
@@ -46,12 +48,14 @@ export async function getAllShopifyOrders() {
         const row = [
           order.id, // order_id
           order.created_at, // order_date
-          `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.trim(), // customer_name
-          order.gateway || '', // payment_method
+          `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim(), // customer_name
+          order.gateway || "", // payment_method
           parseFloat(order.total_price), // order_total
-          order.financial_status || '', // financial_status
-          order.fulfillment_status || '', // fulfillment_status
-          order.gateway && order.gateway.toLowerCase().includes('cod') ? 'COD' : 'Prepaid', // cod_prepaid
+          order.financial_status || "", // financial_status
+          order.fulfillment_status || "", // fulfillment_status
+          order.gateway && order.gateway.toLowerCase().includes("cod")
+            ? "COD"
+            : "Prepaid", // cod_prepaid
         ];
         orders.push(row);
       });
@@ -62,7 +66,7 @@ export async function getAllShopifyOrders() {
         const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
         if (nextMatch) {
           const nextUrl = new URL(nextMatch[1]);
-          pageInfo = nextUrl.searchParams.get('page_info');
+          pageInfo = nextUrl.searchParams.get("page_info");
           hasNextPage = true;
         } else {
           hasNextPage = false;
@@ -71,13 +75,15 @@ export async function getAllShopifyOrders() {
         hasNextPage = false;
       }
 
-      console.log(`[Shopify] Fetched ${fetchedOrders.length} orders (total so far: ${orders.length})`);
+      console.log(
+        `[Shopify] Fetched ${fetchedOrders.length} orders (total so far: ${orders.length})`,
+      );
     }
 
     console.log(`[Shopify] Total orders fetched: ${orders.length}`);
     return orders;
   } catch (error) {
-    console.error('[Shopify] Error fetching orders:', error.message);
+    console.error("[Shopify] Error fetching orders:", error.message);
     throw new Error(`Failed to fetch Shopify orders: ${error.message}`);
   }
 }

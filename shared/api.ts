@@ -15,7 +15,7 @@ export interface DemoResponse {
  * Response type for reconciliation endpoint (/api/reconcile)
  */
 export interface ReconciliationResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   timestamp: string;
   duration?: string;
   shopifyOrders?: number;

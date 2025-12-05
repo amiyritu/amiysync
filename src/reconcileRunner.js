@@ -1,7 +1,7 @@
-import { getAllShopifyOrders } from './shopify.js';
-import { getRemittanceData } from './shiprocket.js';
-import { mergeDatasets } from './merge.js';
-import { clearAndWriteSheet } from './sheets.js';
+import { getAllShopifyOrders } from "./shopify.js";
+import { getRemittanceData } from "./shiprocket.js";
+import { mergeDatasets } from "./merge.js";
+import { clearAndWriteSheet } from "./sheets.js";
 
 /**
  * Main reconciliation runner
@@ -11,34 +11,39 @@ import { clearAndWriteSheet } from './sheets.js';
  */
 export async function runReconciliation() {
   const startTime = new Date();
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`[Reconciliation] Starting reconciliation run at ${startTime.toISOString()}`);
-  console.log(`${'='.repeat(60)}\n`);
+  console.log(`\n${"=".repeat(60)}`);
+  console.log(
+    `[Reconciliation] Starting reconciliation run at ${startTime.toISOString()}`,
+  );
+  console.log(`${"=".repeat(60)}\n`);
 
   try {
     // Step 1: Fetch Shopify orders
-    console.log('[Reconciliation] Step 1: Fetching Shopify orders...');
+    console.log("[Reconciliation] Step 1: Fetching Shopify orders...");
     const shopifyOrders = await getAllShopifyOrders();
 
     // Step 2: Fetch Shiprocket settlements
-    console.log('[Reconciliation] Step 2: Fetching Shiprocket settlements...');
+    console.log("[Reconciliation] Step 2: Fetching Shiprocket settlements...");
     const shiprocketSettlements = await getRemittanceData();
 
     // Step 3: Merge datasets
-    console.log('[Reconciliation] Step 3: Merging datasets...');
-    const reconciliationData = mergeDatasets(shopifyOrders, shiprocketSettlements);
+    console.log("[Reconciliation] Step 3: Merging datasets...");
+    const reconciliationData = mergeDatasets(
+      shopifyOrders,
+      shiprocketSettlements,
+    );
 
     // Step 4: Write to Google Sheets
-    console.log('[Reconciliation] Step 4: Writing to Google Sheets...');
-    await clearAndWriteSheet('Shopify_Orders', shopifyOrders);
-    await clearAndWriteSheet('Shiprocket_Settlements', shiprocketSettlements);
-    await clearAndWriteSheet('Reconciliation', reconciliationData);
+    console.log("[Reconciliation] Step 4: Writing to Google Sheets...");
+    await clearAndWriteSheet("Shopify_Orders", shopifyOrders);
+    await clearAndWriteSheet("Shiprocket_Settlements", shiprocketSettlements);
+    await clearAndWriteSheet("Reconciliation", reconciliationData);
 
     const endTime = new Date();
     const duration = (endTime - startTime) / 1000; // in seconds
 
     const summary = {
-      status: 'success',
+      status: "success",
       timestamp: endTime.toISOString(),
       duration: `${duration.toFixed(2)}s`,
       shopifyOrders: shopifyOrders.length,
@@ -51,7 +56,7 @@ export async function runReconciliation() {
     console.log(`  - Shiprocket Settlements: ${summary.shiprocketRows}`);
     console.log(`  - Reconciliation Rows: ${summary.reconciledRows}`);
     console.log(`  - Duration: ${summary.duration}`);
-    console.log(`${'='.repeat(60)}\n`);
+    console.log(`${"=".repeat(60)}\n`);
 
     return summary;
   } catch (error) {
@@ -59,7 +64,7 @@ export async function runReconciliation() {
     const duration = (endTime - startTime) / 1000;
 
     const summary = {
-      status: 'error',
+      status: "error",
       timestamp: endTime.toISOString(),
       duration: `${duration.toFixed(2)}s`,
       error: error.message,
@@ -68,7 +73,7 @@ export async function runReconciliation() {
     console.error(`\n[Reconciliation] Run failed with error:`);
     console.error(`  - Message: ${error.message}`);
     console.error(`  - Duration: ${summary.duration}`);
-    console.error(`${'='.repeat(60)}\n`);
+    console.error(`${"=".repeat(60)}\n`);
 
     throw error;
   }

@@ -1,17 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
 
 const SHIPROCKET_EMAIL = process.env.SHIPROCKET_EMAIL;
 const SHIPROCKET_PASSWORD = process.env.SHIPROCKET_PASSWORD;
 
 if (!SHIPROCKET_EMAIL || !SHIPROCKET_PASSWORD) {
-  throw new Error('Missing SHIPROCKET_EMAIL or SHIPROCKET_PASSWORD environment variables');
+  throw new Error(
+    "Missing SHIPROCKET_EMAIL or SHIPROCKET_PASSWORD environment variables",
+  );
 }
 
 // In-memory token cache (lost on function restart, which is expected for serverless)
 let cachedToken = null;
 
 const shiprocketBaseApi = axios.create({
-  baseURL: 'https://apiv2.shiprocket.in',
+  baseURL: "https://apiv2.shiprocket.in",
 });
 
 /**
@@ -21,22 +23,22 @@ const shiprocketBaseApi = axios.create({
  */
 export async function login() {
   if (cachedToken) {
-    console.log('[Shiprocket] Using cached token');
+    console.log("[Shiprocket] Using cached token");
     return cachedToken;
   }
 
   try {
-    console.log('[Shiprocket] Attempting login...');
-    const response = await shiprocketBaseApi.post('/v1/external/auth/login', {
+    console.log("[Shiprocket] Attempting login...");
+    const response = await shiprocketBaseApi.post("/v1/external/auth/login", {
       email: SHIPROCKET_EMAIL,
       password: SHIPROCKET_PASSWORD,
     });
 
     cachedToken = response.data.token;
-    console.log('[Shiprocket] Login successful, token cached');
+    console.log("[Shiprocket] Login successful, token cached");
     return cachedToken;
   } catch (error) {
-    console.error('[Shiprocket] Login failed:', error.message);
+    console.error("[Shiprocket] Login failed:", error.message);
     throw new Error(`Shiprocket login failed: ${error.message}`);
   }
 }
@@ -57,14 +59,14 @@ export async function shiprocketGet(path, params = {}) {
       params,
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     return response.data;
   } catch (error) {
     if (error.response && error.response.status === 401) {
-      console.log('[Shiprocket] Token expired, re-logging in...');
+      console.log("[Shiprocket] Token expired, re-logging in...");
       cachedToken = null;
       token = await login();
 
@@ -73,13 +75,15 @@ export async function shiprocketGet(path, params = {}) {
           params,
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
         return response.data;
       } catch (retryError) {
-        console.error('[Shiprocket] Retry failed:', retryError.message);
-        throw new Error(`Shiprocket API call failed after token refresh: ${retryError.message}`);
+        console.error("[Shiprocket] Retry failed:", retryError.message);
+        throw new Error(
+          `Shiprocket API call failed after token refresh: ${retryError.message}`,
+        );
       }
     } else if (error.response) {
       const status = error.response.status;
@@ -87,7 +91,7 @@ export async function shiprocketGet(path, params = {}) {
       console.error(`[Shiprocket] API error (${status}): ${message}`);
       throw new Error(`Shiprocket API error (${status}): ${message}`);
     } else {
-      console.error('[Shiprocket] Network error:', error.message);
+      console.error("[Shiprocket] Network error:", error.message);
       throw new Error(`Shiprocket network error: ${error.message}`);
     }
   }
@@ -102,8 +106,8 @@ export async function getRemittanceData() {
   const settlements = [];
 
   try {
-    console.log('[Shiprocket] Fetching settlement batches...');
-    const batchesResponse = await shiprocketGet('/v1/external/settlements');
+    console.log("[Shiprocket] Fetching settlement batches...");
+    const batchesResponse = await shiprocketGet("/v1/external/settlements");
 
     const batches = batchesResponse.data || [];
     console.log(`[Shiprocket] Found ${batches.length} settlement batches`);
@@ -111,37 +115,49 @@ export async function getRemittanceData() {
     for (const batch of batches) {
       try {
         console.log(`[Shiprocket] Fetching orders for batch ${batch.id}...`);
-        const ordersResponse = await shiprocketGet(`/v1/external/settlements/${batch.id}`);
+        const ordersResponse = await shiprocketGet(
+          `/v1/external/settlements/${batch.id}`,
+        );
 
         const orders = ordersResponse.data || [];
-        console.log(`[Shiprocket] Batch ${batch.id} has ${orders.length} orders`);
+        console.log(
+          `[Shiprocket] Batch ${batch.id} has ${orders.length} orders`,
+        );
 
         // Map each order to the Shiprocket_Settlements row format
         orders.forEach((order) => {
           const row = [
             order.order_id, // order_id
-            order.awb || '', // awb
+            order.awb || "", // awb
             parseFloat(order.order_amount) || 0, // order_amount
             parseFloat(order.shipping_charges) || 0, // shipping_fee
             parseFloat(order.cod_charges) || 0, // cod_fee
             parseFloat(order.adjustments) || 0, // adjustments
             parseFloat(order.rto_reversal) || 0, // rto_reversal
             parseFloat(order.net_settlement) || 0, // net_remitted
-            batch.date || '', // remittance_date
+            batch.date || "", // remittance_date
             batch.id, // crf_id
           ];
           settlements.push(row);
         });
       } catch (batchError) {
-        console.error(`[Shiprocket] Error fetching batch ${batch.id}:`, batchError.message);
+        console.error(
+          `[Shiprocket] Error fetching batch ${batch.id}:`,
+          batchError.message,
+        );
         // Continue with next batch instead of failing entirely
       }
     }
 
-    console.log(`[Shiprocket] Total settlement rows fetched: ${settlements.length}`);
+    console.log(
+      `[Shiprocket] Total settlement rows fetched: ${settlements.length}`,
+    );
     return settlements;
   } catch (error) {
-    console.error('[Shiprocket] Error fetching remittance data:', error.message);
+    console.error(
+      "[Shiprocket] Error fetching remittance data:",
+      error.message,
+    );
     throw new Error(`Failed to fetch Shiprocket settlements: ${error.message}`);
   }
 }

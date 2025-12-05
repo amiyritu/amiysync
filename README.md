@@ -173,6 +173,7 @@ Fetches all Shopify orders with pagination, mapping each to the `Shopify_Orders`
 ### `src/shiprocket.js`
 
 Exports:
+
 - `login()` - Authenticates and caches JWT token
 - `shiprocketGet(path, params?)` - Helper for authenticated API calls (handles token refresh)
 - `getRemittanceData()` - Fetches settlement batches and orders
@@ -182,6 +183,7 @@ Exports:
 ### `src/sheets.js`
 
 Exports:
+
 - `writeToSheet(range, values)` - Writes data to a specific range
 - `clearSheetData(range)` - Clears data in a range
 - `clearAndWriteSheet(tabName, values)` - Clears and writes in one operation
@@ -193,6 +195,7 @@ Uses Google Service Account for authentication.
 Exports: `mergeDatasets(shopifyRows, shiprocketRows)`
 
 Reconciles Shopify orders with Shiprocket settlements by matching order IDs. Generates status values:
+
 - `Reconciled` - Order amounts match (within $0.50)
 - `Mismatch` - Order amounts differ by more than $0.50
 - `Pending Remittance` - No Shiprocket settlement found yet
@@ -204,6 +207,7 @@ Reconciles Shopify orders with Shiprocket settlements by matching order IDs. Gen
 Exports: `runReconciliation()`
 
 Main orchestration function that:
+
 1. Fetches Shopify orders
 2. Fetches Shiprocket settlements
 3. Merges datasets
@@ -220,11 +224,13 @@ Logs detailed progress and timing.
 Manually triggers a reconciliation run.
 
 **Request**:
+
 ```bash
 curl https://your-site.netlify.app/api/reconcile
 ```
 
 **Response** (on success):
+
 ```json
 {
   "status": "success",
@@ -237,6 +243,7 @@ curl https://your-site.netlify.app/api/reconcile
 ```
 
 **Response** (on error):
+
 ```json
 {
   "status": "error",
@@ -250,11 +257,13 @@ curl https://your-site.netlify.app/api/reconcile
 Configured in `netlify/functions/reconcile-scheduled.js` with cron expression `0 */6 * * *`.
 
 **Behavior**:
+
 - Runs automatically at 00:00, 06:00, 12:00, 18:00 UTC every day
 - Executes the full reconciliation pipeline
 - Results logged to Netlify Function logs
 
 **View Logs**:
+
 1. Go to Netlify site dashboard
 2. Navigate to "Functions"
 3. Click on "reconcile-scheduled"
@@ -282,6 +291,7 @@ git push origin main
 In Netlify Site Settings → Build & Deploy → Environment:
 
 Add all variables from your `.env` file:
+
 - `SHOPIFY_STORE_DOMAIN`
 - `SHOPIFY_ADMIN_TOKEN`
 - `SHIPROCKET_EMAIL`
@@ -327,6 +337,7 @@ Netlify automatically deploys when you push to the configured branch, or manuall
 ## Logging
 
 All modules include console logging with prefixes:
+
 - `[Shopify]` - Shopify operations
 - `[Shiprocket]` - Shiprocket operations
 - `[Sheets]` - Google Sheets operations
@@ -336,6 +347,7 @@ All modules include console logging with prefixes:
 - `[Scheduled]` - Automated scheduled runs
 
 View logs in:
+
 - **Local development**: Terminal output
 - **Netlify**: Functions dashboard → Function logs
 
