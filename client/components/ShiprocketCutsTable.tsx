@@ -75,13 +75,19 @@ export function ShiprocketCutsTable({
           <tbody className="divide-y divide-slate-600">
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                <td
+                  colSpan={8}
+                  className="px-4 py-8 text-center text-slate-400"
+                >
                   Loading...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                <td
+                  colSpan={8}
+                  className="px-4 py-8 text-center text-slate-400"
+                >
                   No orders to display
                 </td>
               </tr>
@@ -121,7 +127,9 @@ export function ShiprocketCutsTable({
                   </td>
                   <td className="px-4 py-2 text-slate-300 text-center text-xs">
                     {item.transaction_count > 0 ? (
-                      <span className="text-green-400">{item.transaction_count}</span>
+                      <span className="text-green-400">
+                        {item.transaction_count}
+                      </span>
                     ) : (
                       <span className="text-slate-500">0</span>
                     )}

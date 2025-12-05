@@ -120,7 +120,9 @@ export default function Index() {
   const fetchShiprocketCutsPage = async (page: number) => {
     try {
       setShiprocketCutsLoading(true);
-      const response = await fetch(`/api/reconcile/shiprocket-cuts?page=${page}`);
+      const response = await fetch(
+        `/api/reconcile/shiprocket-cuts?page=${page}`,
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -597,8 +599,8 @@ export default function Index() {
               Results Location
             </h3>
             <p className="text-slate-300 text-sm">
-              All reconciliation results are written to a Google Sheet with
-              four tabs:
+              All reconciliation results are written to a Google Sheet with four
+              tabs:
             </p>
             <ul className="text-slate-200 text-sm font-mono space-y-1 ml-4 mt-3 list-disc">
               <li>Shopify_Orders</li>

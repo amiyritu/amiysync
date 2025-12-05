@@ -379,7 +379,11 @@ export async function getStatementDetails(fromDate = null, toDate = null) {
     // Default to 1 year back for first run
     if (!fromDate || !toDate) {
       const today = new Date();
-      const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+      const oneYearAgo = new Date(
+        today.getFullYear() - 1,
+        today.getMonth(),
+        today.getDate(),
+      );
 
       toDate = toDate || today.toISOString().split("T")[0];
       fromDate = fromDate || oneYearAgo.toISOString().split("T")[0];
@@ -440,7 +444,10 @@ export async function getStatementDetails(fromDate = null, toDate = null) {
     );
     return allTransactions;
   } catch (error) {
-    console.error("[Shiprocket] Error fetching statement details:", error.message);
+    console.error(
+      "[Shiprocket] Error fetching statement details:",
+      error.message,
+    );
     throw new Error(`Failed to fetch statement details: ${error.message}`);
   }
 }
@@ -497,7 +504,10 @@ export async function calculatePerOrderCuts() {
           shipment.order_id || shipment.channel_order_id || "",
           "",
         );
-        const awb = safeParseString(shipment.awb || shipment.tracking_number || "", "");
+        const awb = safeParseString(
+          shipment.awb || shipment.tracking_number || "",
+          "",
+        );
         const orderAmount = safeParseFloat(
           shipment.order_amount || shipment.cod_amount || 0,
           0,
@@ -548,7 +558,9 @@ export async function calculatePerOrderCuts() {
           hasStatementData ? "Yes" : "No", // has_statement_data
           transactionDetails.length, // transaction_count
           safeParseString(
-            shipment.created_at || shipment.date || new Date().toISOString().split("T")[0],
+            shipment.created_at ||
+              shipment.date ||
+              new Date().toISOString().split("T")[0],
             new Date().toISOString().split("T")[0],
           ), // shipment_date
         ];
@@ -562,15 +574,11 @@ export async function calculatePerOrderCuts() {
       }
     });
 
-    console.log(
-      `[Shiprocket] Calculated cuts for ${cuts.length} shipments`,
-    );
+    console.log(`[Shiprocket] Calculated cuts for ${cuts.length} shipments`);
     return cuts;
   } catch (error) {
     console.error("[Shiprocket] Error calculating cuts:", error.message);
-    throw new Error(
-      `Failed to calculate per-order cuts: ${error.message}`,
-    );
+    throw new Error(`Failed to calculate per-order cuts: ${error.message}`);
   }
 }
 

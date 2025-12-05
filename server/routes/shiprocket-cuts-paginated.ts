@@ -8,7 +8,10 @@ export const handleShiprocketCutsPaginated: RequestHandler = async (
 ) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const perPage = Math.max(1, Math.min(200, parseInt(req.query.per_page as string) || 50));
+    const perPage = Math.max(
+      1,
+      Math.min(200, parseInt(req.query.per_page as string) || 50),
+    );
 
     console.log(
       `[HTTP] Fetching Shiprocket cuts - page ${page}, per_page ${perPage}`,

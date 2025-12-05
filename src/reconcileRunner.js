@@ -27,7 +27,9 @@ export async function runReconciliation() {
     const shiprocketSettlements = await getRemittanceData();
 
     // Step 3: Calculate per-order Shiprocket cuts
-    console.log("[Reconciliation] Step 3: Calculating per-order Shiprocket cuts...");
+    console.log(
+      "[Reconciliation] Step 3: Calculating per-order Shiprocket cuts...",
+    );
     const shiprocketCuts = await calculatePerOrderCuts();
 
     // Step 4: Merge datasets
