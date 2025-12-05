@@ -1,6 +1,6 @@
 import axios from "axios";
 
-function getShopifyConfig() {
+export function getShopifyConfig() {
   const domain = process.env.SHOPIFY_STORE_DOMAIN;
   const token = process.env.SHOPIFY_ADMIN_TOKEN;
 
