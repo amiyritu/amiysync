@@ -109,7 +109,16 @@ export async function shiprocketGet(path, params = {}) {
       }
     } else if (error.response) {
       const status = error.response.status;
-      const message = error.response.data?.message || error.message;
+      let message = error.message;
+
+      // Handle different response types (JSON vs HTML/text)
+      if (typeof error.response.data === 'object' && error.response.data?.message) {
+        message = error.response.data.message;
+      } else if (typeof error.response.data === 'string') {
+        // If response is HTML or plain text, just use the status
+        message = `HTTP ${status}`;
+      }
+
       console.error(`[Shiprocket] API error (${status}): ${message}`);
       throw new Error(`Shiprocket API error (${status}): ${message}`);
     } else {
