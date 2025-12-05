@@ -18,7 +18,9 @@ export const handleDiagnostic: RequestHandler = async (req, res) => {
     // Log detailed structure
     console.log("[Diagnostic] Shopify sample structure:");
     shopifySample.forEach((row, idx) => {
-      console.log(`  Order ${idx}: ID=${row[0]}, Name=${row[1]}, COD=${row[8]}`);
+      console.log(
+        `  Order ${idx}: ID=${row[0]}, Name=${row[1]}, COD=${row[8]}`,
+      );
     });
 
     console.log("[Diagnostic] Shiprocket sample structure:");

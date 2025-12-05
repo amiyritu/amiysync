@@ -332,7 +332,8 @@ export async function getRemittanceData() {
       while (hasMore && page <= MAX_PAGES) {
         if (Date.now() - startTime > MAX_WAIT_TIME) {
           console.log(
-            "[Shiprocket] Timeout approaching, stopping batch fetch at page " + page,
+            "[Shiprocket] Timeout approaching, stopping batch fetch at page " +
+              page,
           );
           break;
         }
@@ -401,7 +402,11 @@ export async function getRemittanceData() {
             try {
               const channelOrderId = safeParseString(
                 order.channel_order_id,
-                order.cef_id || order.CEF_ID || order.order_id || order.id || "",
+                order.cef_id ||
+                  order.CEF_ID ||
+                  order.order_id ||
+                  order.id ||
+                  "",
               );
 
               const ute = safeParseString(
@@ -435,7 +440,10 @@ export async function getRemittanceData() {
                 safeParseFloat(order.cod_charges || 0, 0),
                 safeParseFloat(order.adjustments || 0, 0),
                 safeParseFloat(order.rto_reversal || 0, 0),
-                safeParseFloat(order.net_settlement || order.remittance_amount || 0, 0),
+                safeParseFloat(
+                  order.net_settlement || order.remittance_amount || 0,
+                  0,
+                ),
                 safeParseString(
                   order.remittance_date ||
                     order.date ||
@@ -480,14 +488,13 @@ export async function getRemittanceData() {
         while (hasMore && page <= 3) {
           if (Date.now() - startTime > MAX_WAIT_TIME) {
             console.log(
-              "[Shiprocket] Timeout approaching, stopping fallback fetch at page " + page,
+              "[Shiprocket] Timeout approaching, stopping fallback fetch at page " +
+                page,
             );
             break;
           }
 
-          console.log(
-            `[Shiprocket] Fallback: Fetching orders page ${page}...`,
-          );
+          console.log(`[Shiprocket] Fallback: Fetching orders page ${page}...`);
           const ordersResponse = await shiprocketGet("/v1/external/orders", {
             page,
             per_page: pageSize,
@@ -581,9 +588,7 @@ export async function getRemittanceData() {
           "[Shiprocket] Fallback also failed:",
           fallbackError.message,
         );
-        throw new Error(
-          `All approaches failed: ${fallbackError.message}`,
-        );
+        throw new Error(`All approaches failed: ${fallbackError.message}`);
       }
     }
 

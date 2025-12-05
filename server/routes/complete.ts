@@ -29,7 +29,9 @@ export const handleComplete: RequestHandler = async (req, res) => {
     // Step 2: Fetch Shiprocket settlements
     console.log("[Complete] Step 2: Fetching Shiprocket settlements...");
     const shiprocketSettlements = await getRemittanceData();
-    console.log(`[Complete] Fetched ${shiprocketSettlements.length} Shiprocket settlements`);
+    console.log(
+      `[Complete] Fetched ${shiprocketSettlements.length} Shiprocket settlements`,
+    );
 
     // Step 3: Merge datasets
     console.log("[Complete] Step 3: Merging datasets...");
@@ -37,7 +39,9 @@ export const handleComplete: RequestHandler = async (req, res) => {
       shopifyOrders,
       shiprocketSettlements,
     );
-    console.log(`[Complete] Generated ${reconciliationData.length} reconciliation rows`);
+    console.log(
+      `[Complete] Generated ${reconciliationData.length} reconciliation rows`,
+    );
 
     // Step 4: Write to Google Sheets (in parallel for speed)
     console.log("[Complete] Step 4: Writing to Google Sheets...");
