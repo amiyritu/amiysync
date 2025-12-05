@@ -44,11 +44,14 @@ export const handleShiprocketPaginated: RequestHandler = async (req, res) => {
 
     if (page > totalPages && totalPages > 0) {
       clearTimeout(timeoutHandle);
-      return res.status(400).json({
-        status: "error",
-        message: `Page ${page} exceeds total pages (${totalPages})`,
-        timestamp: new Date().toISOString(),
-      });
+      if (!timeoutTriggered && !res.headersSent) {
+        return res.status(400).json({
+          status: "error",
+          message: `Page ${page} exceeds total pages (${totalPages})`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      return;
     }
 
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
