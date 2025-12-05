@@ -245,6 +245,12 @@ async function getSettlementBatchDetails(batchId) {
           "",
         );
 
+        const shippingCharges = safeParseFloat(order.shipping_charges, 0);
+        const totalFreightCharge = safeParseFloat(
+          order.total_freight_charge || order.shipping_charges || 0,
+          shippingCharges,
+        );
+
         const row = [
           channelOrderId, // channel_order_id / shopify_order_id (primary match key)
           ute, // ute / last_mile_awb (secondary match key)
@@ -258,7 +264,7 @@ async function getSettlementBatchDetails(batchId) {
             "",
           ), // awb
           safeParseFloat(order.order_amount || order.base_amount || 0, 0), // order_amount
-          safeParseFloat(order.shipping_charges, 0), // shipping_charges
+          shippingCharges, // shipping_charges
           safeParseFloat(order.cod_charges, 0), // cod_charges
           safeParseFloat(order.adjustments, 0), // adjustments
           safeParseFloat(order.rto_reversal, 0), // rto_reversal
@@ -270,6 +276,7 @@ async function getSettlementBatchDetails(batchId) {
             new Date().toISOString().split("T")[0],
           ), // remittance_date
           safeParseString(order.batch_id, batchId), // batch_id
+          totalFreightCharge, // total_freight_charge
         ];
         batchOrders.push(row);
       } catch (orderError) {
