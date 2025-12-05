@@ -59,7 +59,7 @@ export async function checkShiprocketHealth() {
       limit: 1,
     });
 
-    if (response && response.data !== undefined) {
+    if (response !== undefined) {
       console.log("[Health] Shiprocket API is healthy");
       return { status: true, message: "Connected" };
     }
