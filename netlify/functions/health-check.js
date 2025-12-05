@@ -5,21 +5,21 @@ import { runAllHealthChecks } from "../../src/healthChecks.js";
  * GET /api/health-check
  */
 export default async (req, context) => {
-  // Only allow GET requests
-  if (req.method !== "GET") {
-    return new Response(
-      JSON.stringify({
-        status: "error",
-        message: "Method not allowed. Use GET /api/health-check",
-      }),
-      {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
-
   try {
+    // Only allow GET requests
+    if (req.method !== "GET") {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Method not allowed. Use GET /api/health-check",
+        }),
+        {
+          status: 405,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     console.log("[Health Check] Endpoint called");
     const healthStatus = await runAllHealthChecks();
 
@@ -28,12 +28,13 @@ export default async (req, context) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[Health Check] Error:", error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("[Health Check] Error:", errorMessage);
 
     return new Response(
       JSON.stringify({
         status: "error",
-        message: error.message,
+        message: errorMessage,
         timestamp: new Date().toISOString(),
       }),
       {
