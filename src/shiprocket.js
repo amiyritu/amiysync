@@ -210,27 +210,32 @@ async function getSettlementBatchDetails(batchId) {
     // Extract order-level remittance data
     orders.forEach((order, index) => {
       try {
-        // Try to find matching ID field: cef_id, ute, order_id, id
-        const cefId = safeParseString(
-          order.cef_id || order.CEF_ID,
-          order.order_id || order.id || "",
+        // Primary matching key: channel_order_id (Shopify order ID from Shiprocket)
+        const channelOrderId = safeParseString(
+          order.channel_order_id,
+          order.cef_id || order.CEF_ID || order.order_id || order.id || "",
         );
-        const ute = safeParseString(order.ute || order.UTE, "");
+
+        // Secondary matching key: UTE or other identifiers
+        const ute = safeParseString(
+          order.ute || order.UTE || order.last_mile_awb || "",
+          "",
+        );
 
         const row = [
-          cefId, // cef_id (primary match key)
-          ute, // ute (secondary match key)
-          safeParseString(order.order_id, order.id || ""), // order_id
-          safeParseString(order.awb, order.tracking_number || order.shipment_id || ""), // awb
-          safeParseFloat(order.order_amount, 0), // order_amount
+          channelOrderId, // channel_order_id / shopify_order_id (primary match key)
+          ute, // ute / last_mile_awb (secondary match key)
+          safeParseString(order.order_id || order.id || "", ""), // shiprocket_order_id
+          safeParseString(order.awb || order.last_mile_awb || order.tracking_number || order.shipment_id || "", ""), // awb
+          safeParseFloat(order.order_amount || order.base_amount || 0, 0), // order_amount
           safeParseFloat(order.shipping_charges, 0), // shipping_charges
           safeParseFloat(order.cod_charges, 0), // cod_charges
           safeParseFloat(order.adjustments, 0), // adjustments
           safeParseFloat(order.rto_reversal, 0), // rto_reversal
           safeParseFloat(order.net_settlement, 0), // net_settlement
           safeParseString(
-            order.remittance_date,
-            order.date || new Date().toISOString().split("T")[0],
+            order.remittance_date || order.date || new Date().toISOString().split("T")[0],
+            new Date().toISOString().split("T")[0],
           ), // remittance_date
           safeParseString(order.batch_id, batchId), // batch_id
         ];
