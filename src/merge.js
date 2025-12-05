@@ -193,6 +193,7 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
       let rtoReversal = 0;
       let remittanceDate = "";
       let batchId = "";
+      let totalFreightCharge = 0;
 
       if (settlement) {
         shiprocketNet = parseFloat(settlement[9]) || 0; // net_settlement (column 9)
@@ -203,6 +204,7 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         rtoReversal = parseFloat(settlement[8]) || 0; // rto_reversal (column 8)
         remittanceDate = settlement[10] || ""; // remittance_date (column 10)
         batchId = settlement[11] || ""; // batch_id (column 11)
+        totalFreightCharge = parseFloat(settlement[12]) || 0; // total_freight_charge (column 12)
       }
 
       const difference = shopifyTotal - shiprocketNet;
