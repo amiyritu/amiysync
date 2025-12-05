@@ -73,10 +73,7 @@ export async function checkShiprocketHealth() {
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    if (
-      errorMessage.includes("401") ||
-      errorMessage.includes("Unauthorized")
-    ) {
+    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
       return { status: false, message: "Invalid credentials" };
     } else if (errorMessage.includes("timeout")) {
       return { status: false, message: "Request timeout" };

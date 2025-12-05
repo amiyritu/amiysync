@@ -8,8 +8,7 @@ export const handleHealthCheck: RequestHandler = async (req, res) => {
 
     res.status(200).json(healthStatus);
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("[Health Check] Error:", errorMessage);
 
     res.status(500).json({

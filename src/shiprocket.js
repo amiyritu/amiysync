@@ -61,9 +61,10 @@ export async function login() {
 
     // Only log response data if it's safe to do so
     if (error.response?.data) {
-      const responsePreview = typeof error.response.data === "string"
-        ? error.response.data.substring(0, 200)
-        : JSON.stringify(error.response.data).substring(0, 200);
+      const responsePreview =
+        typeof error.response.data === "string"
+          ? error.response.data.substring(0, 200)
+          : JSON.stringify(error.response.data).substring(0, 200);
       console.error(
         "[Shiprocket] Login error response (first 200 chars):",
         responsePreview,
@@ -122,9 +123,12 @@ export async function shiprocketGet(path, params = {}) {
       let message = error.message;
 
       // Handle different response types (JSON vs HTML/text)
-      if (typeof error.response.data === 'object' && error.response.data?.message) {
+      if (
+        typeof error.response.data === "object" &&
+        error.response.data?.message
+      ) {
         message = error.response.data.message;
-      } else if (typeof error.response.data === 'string') {
+      } else if (typeof error.response.data === "string") {
         // If response is HTML or plain text, just use the status
         message = `HTTP ${status}`;
       }

@@ -8,8 +8,7 @@ export const handleReconcile: RequestHandler = async (req, res) => {
 
     res.status(200).json(summary);
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("[HTTP] Reconciliation error:", errorMessage);
 
     res.status(500).json({
