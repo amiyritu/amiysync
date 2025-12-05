@@ -11,11 +11,7 @@
   node_bundler = "esbuild"
   directory = "netlify/functions"
   timeout = 30
-
-[[functions]]
-  name = "reconcile"
   memory = 3008
-  timeout = 30
 
 [[redirects]]
   force = true
