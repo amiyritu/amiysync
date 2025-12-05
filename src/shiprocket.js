@@ -144,77 +144,302 @@ export async function shiprocketGet(path, params = {}) {
 }
 
 /**
+ * Helper function to safely extract and parse numeric fields
+ * @param {any} value - The value to parse
+ * @param {number} defaultValue - Default if value is missing/invalid
+ * @returns {number} Parsed float value
+ */
+function safeParseFloat(value, defaultValue = 0) {
+  if (value === null || value === undefined || value === "") {
+    return defaultValue;
+  }
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
+/**
+ * Helper function to safely extract string fields
+ * @param {any} value - The value to extract
+ * @param {string} defaultValue - Default if value is missing
+ * @returns {string} String value
+ */
+function safeParseString(value, defaultValue = "") {
+  return value ? String(value).trim() : defaultValue;
+}
+
+/**
+ * Fetches detailed settlement data from a specific batch
+ * @param {string} batchId - The batch/settlement ID
+ * @returns {Promise<Array>} Array of order rows from the batch
+ */
+async function getSettlementBatchDetails(batchId) {
+  const batchOrders = [];
+
+  try {
+    console.log(
+      `[Shiprocket] Fetching details for settlement batch: ${batchId}`,
+    );
+    const response = await shiprocketGet(`/v1/external/settlements/${batchId}`);
+
+    // Handle different response structures
+    let orders = [];
+    if (response.data && Array.isArray(response.data.orders)) {
+      orders = response.data.orders;
+    } else if (response.data && Array.isArray(response.data)) {
+      orders = response.data;
+    } else if (Array.isArray(response)) {
+      orders = response;
+    } else {
+      console.warn(
+        `[Shiprocket] Unexpected response structure for batch ${batchId}:`,
+        typeof response,
+      );
+      return batchOrders;
+    }
+
+    console.log(
+      `[Shiprocket] Batch ${batchId} contains ${orders.length} orders`,
+    );
+
+    // Log sample order structure for debugging
+    if (orders.length > 0) {
+      console.log(
+        `[Shiprocket] Sample order structure (first order):`,
+        JSON.stringify(orders[0], null, 2).substring(0, 500),
+      );
+    }
+
+    // Extract order-level remittance data
+    orders.forEach((order, index) => {
+      try {
+        // Primary matching key: channel_order_id (Shopify order ID from Shiprocket)
+        const channelOrderId = safeParseString(
+          order.channel_order_id,
+          order.cef_id || order.CEF_ID || order.order_id || order.id || "",
+        );
+
+        // Secondary matching key: UTE or other identifiers
+        const ute = safeParseString(
+          order.ute || order.UTE || order.last_mile_awb || "",
+          "",
+        );
+
+        const row = [
+          channelOrderId, // channel_order_id / shopify_order_id (primary match key)
+          ute, // ute / last_mile_awb (secondary match key)
+          safeParseString(order.order_id || order.id || "", ""), // shiprocket_order_id
+          safeParseString(
+            order.awb ||
+              order.last_mile_awb ||
+              order.tracking_number ||
+              order.shipment_id ||
+              "",
+            "",
+          ), // awb
+          safeParseFloat(order.order_amount || order.base_amount || 0, 0), // order_amount
+          safeParseFloat(order.shipping_charges, 0), // shipping_charges
+          safeParseFloat(order.cod_charges, 0), // cod_charges
+          safeParseFloat(order.adjustments, 0), // adjustments
+          safeParseFloat(order.rto_reversal, 0), // rto_reversal
+          safeParseFloat(order.net_settlement, 0), // net_settlement
+          safeParseString(
+            order.remittance_date ||
+              order.date ||
+              new Date().toISOString().split("T")[0],
+            new Date().toISOString().split("T")[0],
+          ), // remittance_date
+          safeParseString(order.batch_id, batchId), // batch_id
+        ];
+        batchOrders.push(row);
+      } catch (orderError) {
+        console.error(
+          `[Shiprocket] Error processing order ${index} in batch ${batchId}:`,
+          orderError.message,
+        );
+      }
+    });
+
+    return batchOrders;
+  } catch (error) {
+    console.error(
+      `[Shiprocket] Error fetching batch details for ${batchId}:`,
+      error.message,
+    );
+    throw new Error(
+      `Failed to fetch settlement batch ${batchId}: ${error.message}`,
+    );
+  }
+}
+
+/**
  * Fetches remittance/settlement data from Shiprocket
- * Tries multiple endpoints to find financial data
- * @returns {Promise<Array>} Array of settlement rows
+ * Primary approach: fetches all settlement batches, then fetches detailed order data from each batch
+ * Fallback: if settlements fail, tries orders endpoint
+ * @returns {Promise<Array>} Array of settlement rows with per-order details
  */
 export async function getRemittanceData() {
   const settlements = [];
 
   try {
     console.log("[Shiprocket] Fetching remittance/settlement data...");
-
-    let remittances = [];
-    let endpoint = "";
-
-    // Try to fetch from remittance endpoint first
-    try {
-      console.log("[Shiprocket] Trying /v1/external/remittance endpoint...");
-      const remittanceResponse = await shiprocketGet("/v1/external/remittance");
-      remittances = remittanceResponse.data || remittanceResponse || [];
-      endpoint = "/v1/external/remittance";
-    } catch (error1) {
-      console.log(
-        "[Shiprocket] Remittance endpoint failed, trying settlements...",
-      );
-      try {
-        console.log("[Shiprocket] Trying /v1/external/settlements endpoint...");
-        const settlementResponse = await shiprocketGet(
-          "/v1/external/settlements",
-        );
-        remittances = settlementResponse.data || settlementResponse || [];
-        endpoint = "/v1/external/settlements";
-      } catch (error2) {
-        console.log(
-          "[Shiprocket] Both endpoints failed, using orders fallback...",
-        );
-        // Fallback to orders if both fail
-        const ordersResponse = await shiprocketGet("/v1/external/orders");
-        remittances = ordersResponse.data || ordersResponse || [];
-        endpoint = "/v1/external/orders (fallback)";
-      }
-    }
-
-    // Handle paginated response
-    if (remittances && remittances.results) {
-      remittances = remittances.results;
-    }
-
     console.log(
-      `[Shiprocket] Using ${endpoint}, found ${remittances.length} entries`,
+      "[Shiprocket] Strategy: Primary (settlements with batch details) → Fallback (orders)",
     );
 
-    // Map each entry to the Shiprocket_Settlements row format
-    remittances.forEach((entry) => {
-      const row = [
-        entry.order_id || entry.id || "", // order_id
-        entry.awb || entry.tracking_number || entry.shipment_id || "", // awb
-        parseFloat(entry.order_amount || entry.amount || entry.total || 0), // order_amount
-        parseFloat(
-          entry.shipping_charges || entry.shipping_fee || entry.shipping || 0,
-        ), // shipping_fee
-        parseFloat(entry.cod_charges || entry.cod_fee || entry.cod || 0), // cod_fee
-        parseFloat(entry.adjustments || 0), // adjustments
-        parseFloat(entry.rto_reversal || entry.rto || 0), // rto_reversal
-        parseFloat(entry.net_settlement || entry.net_amount || entry.net || 0), // net_remitted
-        entry.date ||
-          entry.remittance_date ||
-          entry.created_at ||
-          new Date().toISOString().split("T")[0], // remittance_date
-        entry.crf_id || entry.batch_id || "", // crf_id
-      ];
-      settlements.push(row);
-    });
+    let batches = [];
+
+    try {
+      console.log(
+        "[Shiprocket] Fetching settlement batch list from /v1/external/settlements...",
+      );
+      const settlementResponse = await shiprocketGet(
+        "/v1/external/settlements",
+      );
+
+      // Handle different response structures for batch list
+      if (settlementResponse.data && Array.isArray(settlementResponse.data)) {
+        batches = settlementResponse.data;
+      } else if (
+        settlementResponse.data &&
+        Array.isArray(settlementResponse.data.batches)
+      ) {
+        batches = settlementResponse.data.batches;
+      } else if (Array.isArray(settlementResponse)) {
+        batches = settlementResponse;
+      } else {
+        console.warn(
+          "[Shiprocket] Unexpected settlement response structure:",
+          typeof settlementResponse,
+        );
+        batches = [];
+      }
+
+      console.log(`[Shiprocket] Found ${batches.length} settlement batch(es)`);
+
+      // Fetch details for each batch
+      if (batches.length > 0) {
+        for (const batch of batches) {
+          const batchId = safeParseString(
+            batch.id,
+            batch.batch_id || batch.crf_id || "",
+          );
+
+          if (!batchId) {
+            console.warn(
+              "[Shiprocket] Skipping batch with no ID:",
+              JSON.stringify(batch).substring(0, 100),
+            );
+            continue;
+          }
+
+          try {
+            const batchOrders = await getSettlementBatchDetails(batchId);
+            settlements.push(...batchOrders);
+          } catch (batchError) {
+            console.error(
+              `[Shiprocket] Failed to fetch batch ${batchId}, continuing with next batch:`,
+              batchError.message,
+            );
+          }
+        }
+      }
+
+      if (settlements.length === 0) {
+        console.log(
+          "[Shiprocket] No orders found in any settlement batch, trying /v1/external/orders fallback...",
+        );
+        throw new Error("No settlements found, using fallback");
+      }
+    } catch (settlementError) {
+      console.log(
+        "[Shiprocket] Settlement batches approach failed, attempting fallback to /v1/external/orders:",
+        settlementError.message,
+      );
+
+      try {
+        const ordersResponse = await shiprocketGet("/v1/external/orders");
+
+        let orders = [];
+        if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
+          orders = ordersResponse.data;
+        } else if (
+          ordersResponse.data &&
+          Array.isArray(ordersResponse.data.results)
+        ) {
+          orders = ordersResponse.data.results;
+        } else if (Array.isArray(ordersResponse)) {
+          orders = ordersResponse;
+        }
+
+        console.log(
+          `[Shiprocket] Fallback: Found ${orders.length} orders from orders endpoint`,
+        );
+
+        // Log sample order structure for debugging
+        if (orders.length > 0) {
+          console.log(
+            `[Shiprocket] Sample fallback order structure (first order):`,
+            JSON.stringify(orders[0], null, 2).substring(0, 500),
+          );
+        }
+
+        orders.forEach((order) => {
+          try {
+            // Primary matching key: channel_order_id (Shopify order ID from Shiprocket)
+            const channelOrderId = safeParseString(
+              order.channel_order_id,
+              order.cef_id || order.CEF_ID || order.order_id || order.id || "",
+            );
+
+            // Secondary matching key: UTE or other identifiers
+            const ute = safeParseString(
+              order.ute || order.UTE || order.last_mile_awb || "",
+              "",
+            );
+
+            const row = [
+              channelOrderId, // channel_order_id / shopify_order_id (primary match key)
+              ute, // ute / last_mile_awb (secondary match key)
+              safeParseString(order.order_id || order.id || "", ""), // shiprocket_order_id
+              safeParseString(
+                order.awb || order.last_mile_awb || order.tracking_number || "",
+                "",
+              ), // awb
+              safeParseFloat(
+                order.order_amount || order.total || order.base_amount || 0,
+                0,
+              ), // order_amount
+              safeParseFloat(order.shipping_charges || order.shipping || 0, 0), // shipping_charges
+              safeParseFloat(order.cod_charges || order.cod || 0, 0), // cod_charges
+              safeParseFloat(order.adjustments || 0, 0), // adjustments
+              safeParseFloat(order.rto_reversal || order.rto || 0, 0), // rto_reversal
+              safeParseFloat(order.net_settlement || order.net_amount || 0, 0), // net_settlement
+              safeParseString(
+                order.date ||
+                  order.created_at ||
+                  new Date().toISOString().split("T")[0],
+                new Date().toISOString().split("T")[0],
+              ), // remittance_date
+              safeParseString(order.batch_id || order.crf_id || "", ""), // batch_id
+            ];
+            settlements.push(row);
+          } catch (orderError) {
+            console.error(
+              `[Shiprocket] Error processing fallback order:`,
+              orderError.message,
+            );
+          }
+        });
+      } catch (fallbackError) {
+        console.error(
+          "[Shiprocket] Fallback endpoint also failed:",
+          fallbackError.message,
+        );
+        throw new Error(
+          `All settlement/order endpoints failed: ${fallbackError.message}`,
+        );
+      }
+    }
 
     console.log(
       `[Shiprocket] Total settlement rows fetched: ${settlements.length}`,
