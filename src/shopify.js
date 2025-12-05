@@ -63,7 +63,8 @@ export async function getAllShopifyOrders() {
         params.page_info = pageInfo;
       }
 
-      console.log("[Shopify] Fetching orders page...");
+      pageCount++;
+      console.log(`[Shopify] Fetching orders page ${pageCount}...`);
       const response = await shopifyApi.get("/orders.json", { params });
 
       const fetchedOrders = response.data.orders || [];
@@ -86,6 +87,13 @@ export async function getAllShopifyOrders() {
         orders.push(row);
       });
 
+      // Check if we've reached max pages
+      if (pageCount >= MAX_PAGES) {
+        console.log(`[Shopify] Reached max pages (${MAX_PAGES}), stopping`);
+        hasNextPage = false;
+        break;
+      }
+
       // Check for pagination via Link header
       const linkHeader = response.headers.link;
       if (linkHeader) {
@@ -102,7 +110,7 @@ export async function getAllShopifyOrders() {
       }
 
       console.log(
-        `[Shopify] Fetched ${fetchedOrders.length} orders (total so far: ${orders.length})`,
+        `[Shopify] Page ${pageCount}: Fetched ${fetchedOrders.length} orders (total so far: ${orders.length})`,
       );
     }
 
