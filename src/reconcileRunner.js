@@ -2,7 +2,7 @@ import { getAllShopifyOrders } from "./shopify.js";
 import { getRemittanceData } from "./shiprocket.js";
 import { mergeDatasets } from "./merge.js";
 import { generateCodReconciliation, getCodReconciliationHeaders } from "./codReconciliation.js";
-import { clearAndWriteSheet, writeToSheet } from "./sheets.js";
+import { clearAndWriteSheet } from "./sheets.js";
 
 /**
  * Main reconciliation runner
