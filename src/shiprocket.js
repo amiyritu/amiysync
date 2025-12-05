@@ -7,7 +7,7 @@ const shiprocketBaseApi = axios.create({
   baseURL: "https://apiv2.shiprocket.in",
 });
 
-function getShiprocketConfig() {
+export function getShiprocketConfig() {
   const email = process.env.SHIPROCKET_EMAIL;
   const password = process.env.SHIPROCKET_PASSWORD;
 
