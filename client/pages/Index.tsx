@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, CheckCircle, AlertCircle, Clock, Play } from 'lucide-react';
-
-interface ReconciliationStatus {
-  status: 'success' | 'error' | 'pending';
-  timestamp?: string;
-  duration?: string;
-  shopifyOrders?: number;
-  shiprocketRows?: number;
-  reconciledRows?: number;
-  error?: string;
-}
+import { ReconciliationResponse } from '@shared/api';
 
 export default function Index() {
   const [reconciliationStatus, setReconciliationStatus] = useState<ReconciliationStatus | null>(null);
