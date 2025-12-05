@@ -3,7 +3,7 @@ import { RefreshCw, CheckCircle, AlertCircle, Clock, Play } from 'lucide-react';
 import { ReconciliationResponse } from '@shared/api';
 
 export default function Index() {
-  const [reconciliationStatus, setReconciliationStatus] = useState<ReconciliationStatus | null>(null);
+  const [reconciliationStatus, setReconciliationStatus] = useState<ReconciliationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
