@@ -40,8 +40,12 @@ export async function getAllShopifyOrders() {
     while (hasNextPage) {
       const params = {
         limit: 250,
-        status: "any",
       };
+
+      // Only include status on the first request, not when using page_info
+      if (!pageInfo) {
+        params.status = "any";
+      }
 
       if (pageInfo) {
         params.page_info = pageInfo;
