@@ -119,11 +119,13 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         }
       }
 
-      // Log matching strategy if settlement was found
-      if (settlement && matchMethod !== "none") {
-        console.log(
-          `[Merge] Order ${orderName || orderIdString} matched by ${matchMethod}`,
-        );
+      // Track matching statistics
+      if (matchMethod === "name") {
+        stats.matchedByName++;
+      } else if (matchMethod === "id") {
+        stats.matchedById++;
+      } else {
+        stats.matchedByNone++;
       }
 
       const hasSettlement = !!settlement;
