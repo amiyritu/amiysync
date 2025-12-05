@@ -36,11 +36,13 @@ export async function getAllShopifyOrders() {
   const orders = [];
   let hasNextPage = true;
   let pageInfo = null;
-  const MAX_FETCH_TIME = 23000; // 23 second limit to leave buffer for handler
+  const MAX_FETCH_TIME = 18000; // 18 second limit to leave buffer for handler
+  const MAX_PAGES = 8; // Limit to ~2000 orders to prevent timeout
+  let pageCount = 0;
   const startTime = Date.now();
 
   try {
-    while (hasNextPage) {
+    while (hasNextPage && pageCount < MAX_PAGES) {
       // Check if we're approaching the timeout
       if (Date.now() - startTime > MAX_FETCH_TIME) {
         console.log("[Shopify] Timeout approaching, stopping pagination");
