@@ -1,7 +1,19 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, CheckCircle, AlertCircle, Clock, Play } from "lucide-react";
-import { ReconciliationResponse } from "@shared/api";
+import {
+  ReconciliationResponse,
+  PaginatedShopifyResponse,
+  PaginatedShiprocketResponse,
+  CompleteReconciliationResponse,
+} from "@shared/api";
 import { ApiHealthCheck } from "../components/ApiHealthCheck";
+import { ProgressTracker } from "../components/ProgressTracker";
+import { PaginatedResults } from "../components/PaginatedResults";
+
+interface ProgressStep {
+  label: string;
+  status: "pending" | "in-progress" | "completed" | "error";
+}
 
 export default function Index() {
   const [reconciliationStatus, setReconciliationStatus] =
@@ -10,7 +22,150 @@ export default function Index() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
 
-  // Fetch reconciliation status
+  // Paginated results state
+  const [shopifyResults, setShopifyResults] = useState<any[]>([]);
+  const [shopifyPage, setShopifyPage] = useState(1);
+  const [shopifyTotalPages, setShopifyTotalPages] = useState(0);
+  const [shopifyTotalItems, setShopifyTotalItems] = useState(0);
+  const [shopifyLoading, setShopifyLoading] = useState(false);
+
+  const [shiprocketResults, setShiprocketResults] = useState<any[]>([]);
+  const [shiprocketPage, setShiprocketPage] = useState(1);
+  const [shiprocketTotalPages, setShiprocketTotalPages] = useState(0);
+  const [shiprocketTotalItems, setShiprocketTotalItems] = useState(0);
+  const [shiprocketLoading, setShiprocketLoading] = useState(false);
+
+  // Progress tracking state
+  const [progressSteps, setProgressSteps] = useState<ProgressStep[]>([
+    { label: "Fetching Shopify orders", status: "pending" },
+    { label: "Fetching Shiprocket settlements", status: "pending" },
+    { label: "Merging datasets", status: "pending" },
+    { label: "Writing to Google Sheets", status: "pending" },
+  ]);
+  const [isReconciling, setIsReconciling] = useState(false);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
+
+  // Fetch paginated Shopify results
+  const fetchShopifyPage = async (page: number) => {
+    try {
+      setShopifyLoading(true);
+      const response = await fetch(`/api/reconcile/shopify?page=${page}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: PaginatedShopifyResponse = await response.json();
+
+      if (data.status === "success") {
+        setShopifyResults(data.items);
+        setShopifyPage(data.page);
+        setShopifyTotalPages(data.totalPages);
+        setShopifyTotalItems(data.totalItems);
+      } else {
+        console.error("Shopify API error:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching Shopify page:", error);
+    } finally {
+      setShopifyLoading(false);
+    }
+  };
+
+  // Fetch paginated Shiprocket results
+  const fetchShiprocketPage = async (page: number) => {
+    try {
+      setShiprocketLoading(true);
+      const response = await fetch(`/api/reconcile/shiprocket?page=${page}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: PaginatedShiprocketResponse = await response.json();
+
+      if (data.status === "success") {
+        setShiprocketResults(data.items);
+        setShiprocketPage(data.page);
+        setShiprocketTotalPages(data.totalPages);
+        setShiprocketTotalItems(data.totalItems);
+      } else {
+        console.error("Shiprocket API error:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching Shiprocket page:", error);
+    } finally {
+      setShiprocketLoading(false);
+    }
+  };
+
+  // Complete reconciliation with progress tracking
+  const completeReconciliation = async () => {
+    try {
+      setIsReconciling(true);
+      setReconcileError(null);
+      resetProgressSteps();
+
+      // Step 1: Shopify orders
+      updateProgressStep(0, "in-progress");
+      await fetchShopifyPage(1);
+      updateProgressStep(0, "completed");
+
+      // Step 2: Shiprocket settlements
+      updateProgressStep(1, "in-progress");
+      await fetchShiprocketPage(1);
+      updateProgressStep(1, "completed");
+
+      // Step 3 & 4: Merge and write
+      updateProgressStep(2, "in-progress");
+      updateProgressStep(3, "in-progress");
+
+      const response = await fetch("/api/reconcile/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: CompleteReconciliationResponse = await response.json();
+
+      if (data.status === "success") {
+        updateProgressStep(2, "completed");
+        updateProgressStep(3, "completed");
+        setReconciliationStatus({
+          status: "success",
+          timestamp: data.timestamp,
+          duration: data.duration,
+          shopifyOrders: data.shopifyOrders,
+          shiprocketRows: data.shiprocketRows,
+          reconciledRows: data.reconciledRows,
+        });
+        setLastUpdated(new Date());
+      } else {
+        throw new Error(data.message || "Reconciliation failed");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to complete reconciliation";
+      setReconcileError(errorMessage);
+      setReconciliationStatus({
+        status: "error",
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      });
+      updateProgressStep(getCurrentProgressStep(), "error");
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
+  // Fetch reconciliation status (old endpoint)
   const fetchStatus = async () => {
     try {
       setIsLoading(true);
@@ -51,6 +206,28 @@ export default function Index() {
     }
   };
 
+  // Progress tracking helpers
+  const updateProgressStep = (index: number, status: ProgressStep["status"]) => {
+    setProgressSteps((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], status };
+      return updated;
+    });
+  };
+
+  const resetProgressSteps = () => {
+    setProgressSteps([
+      { label: "Fetching Shopify orders", status: "pending" },
+      { label: "Fetching Shiprocket settlements", status: "pending" },
+      { label: "Merging datasets", status: "pending" },
+      { label: "Writing to Google Sheets", status: "pending" },
+    ]);
+  };
+
+  const getCurrentProgressStep = () => {
+    return progressSteps.findIndex((step) => step.status === "in-progress");
+  };
+
   // Auto-refresh effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -79,14 +256,14 @@ export default function Index() {
   };
 
   const getStatusText = () => {
-    if (isLoading) return "Running Reconciliation...";
+    if (isLoading || isReconciling) return "Running Reconciliation...";
     if (!reconciliationStatus) return "Ready to Run";
     if (reconciliationStatus.status === "success") return "Last Run Successful";
     return "Last Run Failed";
   };
 
   const getStatusColor = () => {
-    if (isLoading) return "border-blue-200 bg-blue-50";
+    if (isLoading || isReconciling) return "border-blue-200 bg-blue-50";
     if (!reconciliationStatus) return "border-gray-200 bg-gray-50";
     if (reconciliationStatus.status === "success")
       return "border-green-200 bg-green-50";
@@ -94,7 +271,7 @@ export default function Index() {
   };
 
   const getTextColor = () => {
-    if (isLoading) return "text-blue-900";
+    if (isLoading || isReconciling) return "text-blue-900";
     if (!reconciliationStatus) return "text-gray-900";
     if (reconciliationStatus.status === "success") return "text-green-900";
     return "text-red-900";
@@ -102,7 +279,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">
@@ -188,12 +365,12 @@ export default function Index() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <button
-            onClick={fetchStatus}
-            disabled={isLoading}
+            onClick={completeReconciliation}
+            disabled={isLoading || isReconciling}
             className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 text-lg"
           >
             <Play className="h-6 w-6" />
-            {isLoading ? "Running..." : "Run Reconciliation"}
+            {isLoading || isReconciling ? "Running..." : "Run Reconciliation"}
           </button>
           <button
             onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
@@ -206,6 +383,70 @@ export default function Index() {
             <RefreshCw className="h-6 w-6" />
             {autoRefreshEnabled ? "Auto-Refresh On" : "Auto-Refresh Off"}
           </button>
+        </div>
+
+        {/* Progress Tracker */}
+        {isReconciling && (
+          <div className="mb-8">
+            <ProgressTracker
+              steps={progressSteps}
+              currentStep={getCurrentProgressStep()}
+              isRunning={isReconciling}
+              error={reconcileError || undefined}
+            />
+          </div>
+        )}
+
+        {/* Paginated Results */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <PaginatedResults
+            title="Shopify Orders"
+            items={shopifyResults}
+            page={shopifyPage}
+            totalPages={shopifyTotalPages}
+            totalItems={shopifyTotalItems}
+            perPage={50}
+            columns={[
+              "Order ID",
+              "Name",
+              "Date",
+              "Customer",
+              "Total",
+              "Status",
+            ]}
+            onPrevPage={() => {
+              if (shopifyPage > 1) fetchShopifyPage(shopifyPage - 1);
+            }}
+            onNextPage={() => {
+              if (shopifyPage < shopifyTotalPages)
+                fetchShopifyPage(shopifyPage + 1);
+            }}
+            isLoading={shopifyLoading}
+          />
+          <PaginatedResults
+            title="Shiprocket Settlements"
+            items={shiprocketResults}
+            page={shiprocketPage}
+            totalPages={shiprocketTotalPages}
+            totalItems={shiprocketTotalItems}
+            perPage={50}
+            columns={[
+              "Channel Order ID",
+              "UTE",
+              "Order ID",
+              "AWB",
+              "Amount",
+              "Net",
+            ]}
+            onPrevPage={() => {
+              if (shiprocketPage > 1) fetchShiprocketPage(shiprocketPage - 1);
+            }}
+            onNextPage={() => {
+              if (shiprocketPage < shiprocketTotalPages)
+                fetchShiprocketPage(shiprocketPage + 1);
+            }}
+            isLoading={shiprocketLoading}
+          />
         </div>
 
         {/* Information Cards */}
