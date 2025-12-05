@@ -55,10 +55,18 @@ export const handleComplete: RequestHandler = async (req, res) => {
     const duration = (endTime.getTime() - startTime) / 1000;
 
     // Calculate reconciliation statistics
-    const reconciledCount = reconciliationData.filter((row) => row[8] === "Reconciled").length;
-    const mismatchCount = reconciliationData.filter((row) => row[8] === "Mismatch").length;
-    const pendingCount = reconciliationData.filter((row) => row[8] === "Pending Remittance").length;
-    const prepaidCount = reconciliationData.filter((row) => row[8] === "Prepaid - No Remittance").length;
+    const reconciledCount = reconciliationData.filter(
+      (row) => row[8] === "Reconciled",
+    ).length;
+    const mismatchCount = reconciliationData.filter(
+      (row) => row[8] === "Mismatch",
+    ).length;
+    const pendingCount = reconciliationData.filter(
+      (row) => row[8] === "Pending Remittance",
+    ).length;
+    const prepaidCount = reconciliationData.filter(
+      (row) => row[8] === "Prepaid - No Remittance",
+    ).length;
 
     const summary = {
       status: "success",

@@ -14,7 +14,7 @@ function determineStatus(isCod, hasSettlement, difference) {
 
   // For orders with settlements, check if amounts match
   // Tolerance: $0.50 to account for rounding, currency conversion, or minor adjustments
-  const tolerance = 0.50;
+  const tolerance = 0.5;
 
   if (Math.abs(difference) <= tolerance) {
     return "Reconciled";
@@ -246,7 +246,8 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
       }
 
       // Calculate total deductions (sum of all charges deducted by Shiprocket)
-      const totalDeductions = shippingCharges + codCharges + adjustments + rtoReversal;
+      const totalDeductions =
+        shippingCharges + codCharges + adjustments + rtoReversal;
 
       // Build detailed reconciliation row with all matching keys and settlement details
       const reconciliationRow = [
