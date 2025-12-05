@@ -144,7 +144,7 @@ export async function shiprocketGet(path, params = {}) {
 }
 
 /**
- * Fetches all settlement batches and their orders from Shiprocket
+ * Fetches all orders from Shiprocket
  * Maps each order to a row format for Shiprocket_Settlements sheet
  * @returns {Promise<Array>} Array of settlement order rows
  */
@@ -152,48 +152,28 @@ export async function getRemittanceData() {
   const settlements = [];
 
   try {
-    console.log("[Shiprocket] Fetching settlement batches...");
-    const batchesResponse = await shiprocketGet("/v1/external/settlements");
+    console.log("[Shiprocket] Fetching orders for reconciliation...");
+    const ordersResponse = await shiprocketGet("/v1/external/orders");
 
-    const batches = batchesResponse.data || [];
-    console.log(`[Shiprocket] Found ${batches.length} settlement batches`);
+    const orders = ordersResponse.data || ordersResponse || [];
+    console.log(`[Shiprocket] Found ${orders.length} orders`);
 
-    for (const batch of batches) {
-      try {
-        console.log(`[Shiprocket] Fetching orders for batch ${batch.id}...`);
-        const ordersResponse = await shiprocketGet(
-          `/v1/external/settlements/${batch.id}`,
-        );
-
-        const orders = ordersResponse.data || [];
-        console.log(
-          `[Shiprocket] Batch ${batch.id} has ${orders.length} orders`,
-        );
-
-        // Map each order to the Shiprocket_Settlements row format
-        orders.forEach((order) => {
-          const row = [
-            order.order_id, // order_id
-            order.awb || "", // awb
-            parseFloat(order.order_amount) || 0, // order_amount
-            parseFloat(order.shipping_charges) || 0, // shipping_fee
-            parseFloat(order.cod_charges) || 0, // cod_fee
-            parseFloat(order.adjustments) || 0, // adjustments
-            parseFloat(order.rto_reversal) || 0, // rto_reversal
-            parseFloat(order.net_settlement) || 0, // net_remitted
-            batch.date || "", // remittance_date
-            batch.id, // crf_id
-          ];
-          settlements.push(row);
-        });
-      } catch (batchError) {
-        console.error(
-          `[Shiprocket] Error fetching batch ${batch.id}:`,
-          batchError.message,
-        );
-        // Continue with next batch instead of failing entirely
-      }
-    }
+    // Map each order to the Shiprocket_Settlements row format
+    orders.forEach((order) => {
+      const row = [
+        order.order_id || order.id, // order_id
+        order.awb || "", // awb
+        parseFloat(order.order_amount) || 0, // order_amount
+        parseFloat(order.shipping_charges) || 0, // shipping_fee
+        parseFloat(order.cod_charges) || 0, // cod_fee
+        parseFloat(order.adjustments) || 0, // adjustments
+        parseFloat(order.rto_reversal) || 0, // rto_reversal
+        parseFloat(order.net_settlement) || 0, // net_remitted
+        order.date || new Date().toISOString().split("T")[0], // remittance_date
+        order.crf_id || "", // crf_id
+      ];
+      settlements.push(row);
+    });
 
     console.log(
       `[Shiprocket] Total settlement rows fetched: ${settlements.length}`,
