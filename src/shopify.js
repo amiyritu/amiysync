@@ -93,24 +93,25 @@ export async function getAllShopifyOrders() {
     return orders;
   } catch (error) {
     const domain = process.env.SHOPIFY_STORE_DOMAIN || "NOT_SET";
-    const errorDetails =
-      error.response?.data || error.response?.status || error.message;
+    const statusCode = error.response?.status || "unknown";
 
-    console.error("[Shopify] Error details:", {
+    console.error("[Shopify] Error fetching orders:", {
       domain,
-      status: error.response?.status,
+      url: error.config?.url || "unknown",
+      status: statusCode,
       statusText: error.response?.statusText,
-      data: errorDetails,
+      responseData: error.response?.data,
       message: error.message,
     });
 
-    const statusCode = error.response?.status || "unknown";
     const suggestion =
       statusCode === 400
-        ? "Check that SHOPIFY_STORE_DOMAIN (e.g., 'store.myshopify.com' without https://) and SHOPIFY_ADMIN_TOKEN are correct."
+        ? "Verify SHOPIFY_STORE_DOMAIN (e.g., 'c30a6c-57.myshopify.com' without https://) and SHOPIFY_ADMIN_TOKEN are correct. Also check that the token has 'read_orders' scope."
         : statusCode === 401
-          ? "SHOPIFY_ADMIN_TOKEN is invalid or expired."
-          : "";
+          ? "SHOPIFY_ADMIN_TOKEN is invalid, expired, or has insufficient scopes. Regenerate with 'read_orders' scope."
+          : statusCode === 403
+            ? "SHOPIFY_ADMIN_TOKEN does not have permission to read orders."
+            : "";
 
     throw new Error(
       `Failed to fetch Shopify orders (${statusCode}): ${error.message}. ${suggestion}`,
