@@ -7,6 +7,7 @@ import { handleReconcile } from "./routes/reconcile";
 import { handleShopifyPaginated } from "./routes/shopify-paginated";
 import { handleShiprocketPaginated } from "./routes/shiprocket-paginated";
 import { handleComplete } from "./routes/complete";
+import { handleDiagnostic } from "./routes/diagnostic";
 
 export function createServer() {
   const app = express();
