@@ -17,7 +17,7 @@ function createShopifyApi() {
   const { domain, token } = getShopifyConfig();
 
   return axios.create({
-    baseURL: `https://${domain}/admin/api/2023-10`,
+    baseURL: `https://${domain}/admin/api/2024-10`,
     headers: {
       "X-Shopify-Access-Token": token,
       "Content-Type": "application/json",
