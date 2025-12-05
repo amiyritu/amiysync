@@ -145,44 +145,66 @@ export async function shiprocketGet(path, params = {}) {
 
 /**
  * Fetches remittance/settlement data from Shiprocket
- * Maps each settlement to a row format for Shiprocket_Settlements sheet
+ * Tries multiple endpoints to find financial data
  * @returns {Promise<Array>} Array of settlement rows
  */
 export async function getRemittanceData() {
   const settlements = [];
 
   try {
-    console.log("[Shiprocket] Fetching remittance data...");
-    const remittanceResponse = await shiprocketGet("/v1/external/remittance");
+    console.log("[Shiprocket] Fetching remittance/settlement data...");
 
-    let remittances = remittanceResponse.data || remittanceResponse || [];
+    let remittances = [];
+    let endpoint = "";
 
-    // Handle paginated response
-    if (remittanceResponse.results) {
-      remittances = remittanceResponse.results;
+    // Try to fetch from remittance endpoint first
+    try {
+      console.log("[Shiprocket] Trying /v1/external/remittance endpoint...");
+      const remittanceResponse = await shiprocketGet("/v1/external/remittance");
+      remittances = remittanceResponse.data || remittanceResponse || [];
+      endpoint = "/v1/external/remittance";
+    } catch (error1) {
+      console.log("[Shiprocket] Remittance endpoint failed, trying settlements...");
+      try {
+        console.log("[Shiprocket] Trying /v1/external/settlements endpoint...");
+        const settlementResponse = await shiprocketGet("/v1/external/settlements");
+        remittances = settlementResponse.data || settlementResponse || [];
+        endpoint = "/v1/external/settlements";
+      } catch (error2) {
+        console.log("[Shiprocket] Both endpoints failed, using orders fallback...");
+        // Fallback to orders if both fail
+        const ordersResponse = await shiprocketGet("/v1/external/orders");
+        remittances = ordersResponse.data || ordersResponse || [];
+        endpoint = "/v1/external/orders (fallback)";
+      }
     }
 
-    console.log(`[Shiprocket] Found ${remittances.length} remittance entries`);
+    // Handle paginated response
+    if (remittances && remittances.results) {
+      remittances = remittances.results;
+    }
 
-    // Map each remittance entry to the Shiprocket_Settlements row format
+    console.log(`[Shiprocket] Using ${endpoint}, found ${remittances.length} entries`);
+
+    // Map each entry to the Shiprocket_Settlements row format
     remittances.forEach((entry) => {
       const row = [
         entry.order_id || entry.id || "", // order_id
-        entry.awb || entry.tracking_number || "", // awb
-        parseFloat(entry.order_amount || entry.amount || 0), // order_amount
-        parseFloat(entry.shipping_charges || entry.shipping_fee || 0), // shipping_fee
-        parseFloat(entry.cod_charges || entry.cod_fee || 0), // cod_fee
+        entry.awb || entry.tracking_number || entry.shipment_id || "", // awb
+        parseFloat(entry.order_amount || entry.amount || entry.total || 0), // order_amount
+        parseFloat(entry.shipping_charges || entry.shipping_fee || entry.shipping || 0), // shipping_fee
+        parseFloat(entry.cod_charges || entry.cod_fee || entry.cod || 0), // cod_fee
         parseFloat(entry.adjustments || 0), // adjustments
-        parseFloat(entry.rto_reversal || 0), // rto_reversal
-        parseFloat(entry.net_settlement || entry.net_amount || 0), // net_remitted
-        entry.date || entry.remittance_date || new Date().toISOString().split("T")[0], // remittance_date
+        parseFloat(entry.rto_reversal || entry.rto || 0), // rto_reversal
+        parseFloat(entry.net_settlement || entry.net_amount || entry.net || 0), // net_remitted
+        entry.date || entry.remittance_date || entry.created_at || new Date().toISOString().split("T")[0], // remittance_date
         entry.crf_id || entry.batch_id || "", // crf_id
       ];
       settlements.push(row);
     });
 
     console.log(
-      `[Shiprocket] Total remittance rows fetched: ${settlements.length}`,
+      `[Shiprocket] Total settlement rows fetched: ${settlements.length}`,
     );
     return settlements;
   } catch (error) {
