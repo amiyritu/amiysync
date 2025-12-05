@@ -43,6 +43,10 @@ export async function login() {
       password,
     });
 
+    if (!response.data || !response.data.token) {
+      throw new Error("Login response missing token");
+    }
+
     cachedToken = response.data.token;
     console.log("[Shiprocket] Login successful, token cached");
     return cachedToken;
@@ -54,12 +58,18 @@ export async function login() {
       "[Shiprocket] Login error response type:",
       typeof error.response?.data,
     );
-    console.error(
-      "[Shiprocket] Login error response (first 500 chars):",
-      typeof error.response?.data === "string"
-        ? error.response.data.substring(0, 500)
-        : JSON.stringify(error.response?.data).substring(0, 500),
-    );
+
+    // Only log response data if it's safe to do so
+    if (error.response?.data) {
+      const responsePreview = typeof error.response.data === "string"
+        ? error.response.data.substring(0, 200)
+        : JSON.stringify(error.response.data).substring(0, 200);
+      console.error(
+        "[Shiprocket] Login error response (first 200 chars):",
+        responsePreview,
+      );
+    }
+
     throw new Error(`Shiprocket login failed: ${error.message}`);
   }
 }
