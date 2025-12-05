@@ -95,9 +95,21 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
   // Log sample Shopify keys for debugging
   if (shopifyRows.length > 0) {
     console.log(
-      `[Merge] Sample Shopify Order IDs: ${shopifyRows
+      `[Merge] Sample Shopify Order IDs (numeric): ${shopifyRows
         .slice(0, 3)
         .map((r) => r[0])
+        .join(", ")}`,
+    );
+    console.log(
+      `[Merge] Sample Shopify Order Names (human): ${shopifyRows
+        .slice(0, 3)
+        .map((r) => r[1])
+        .join(", ")}`,
+    );
+    console.log(
+      `[Merge] Sample Shopify (extracted #): ${shopifyRows
+        .slice(0, 3)
+        .map((r) => String(r[1]).replace(/^#/, ""))
         .join(", ")}`,
     );
   }
@@ -180,6 +192,13 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         stats.matchedById++;
       } else if (matchMethod === "ute") {
         stats.matchedByNone++;
+      } else if (matchMethod === "none") {
+        // Log first few unmatched orders for debugging
+        if (stats.matchedByNone + stats.matchedByName + stats.matchedById < 5) {
+          console.log(
+            `[Merge] Unmatched Shopify order: ID=${orderIdString}, Name=${orderName}, Name(no#)=${orderName.replace(/^#/, "")}`,
+          );
+        }
       }
 
       const hasSettlement = !!settlement;
@@ -193,6 +212,7 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
       let rtoReversal = 0;
       let remittanceDate = "";
       let batchId = "";
+      let totalFreightCharge = 0;
 
       if (settlement) {
         shiprocketNet = parseFloat(settlement[9]) || 0; // net_settlement (column 9)
@@ -203,6 +223,7 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         rtoReversal = parseFloat(settlement[8]) || 0; // rto_reversal (column 8)
         remittanceDate = settlement[10] || ""; // remittance_date (column 10)
         batchId = settlement[11] || ""; // batch_id (column 11)
+        totalFreightCharge = parseFloat(settlement[12]) || 0; // total_freight_charge (column 12)
       }
 
       const difference = shopifyTotal - shiprocketNet;
@@ -235,6 +256,7 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         codCharges, // cod_charges
         adjustments, // adjustments
         rtoReversal, // rto_reversal
+        totalFreightCharge, // total_freight_charge
         remittanceDate, // remittance_date
         batchId, // batch_id
         "", // notes (empty for manual entry)

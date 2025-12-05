@@ -5,7 +5,7 @@ import { mergeDatasets } from "../../src/merge.js";
 import { clearAndWriteSheet } from "../../src/sheets.js";
 
 export const handleComplete: RequestHandler = async (req, res) => {
-  const timeoutMs = 24000; // 24 seconds, well under Netlify's 26 second limit
+  const timeoutMs = 28000; // 28 seconds for Netlify's 30 second limit with buffer
   const startTime = Date.now();
 
   const timeoutHandle = setTimeout(() => {
@@ -24,10 +24,14 @@ export const handleComplete: RequestHandler = async (req, res) => {
     // Step 1: Fetch Shopify orders
     console.log("[Complete] Step 1: Fetching Shopify orders...");
     const shopifyOrders = await getAllShopifyOrders();
+    console.log(`[Complete] Fetched ${shopifyOrders.length} Shopify orders`);
 
     // Step 2: Fetch Shiprocket settlements
     console.log("[Complete] Step 2: Fetching Shiprocket settlements...");
     const shiprocketSettlements = await getRemittanceData();
+    console.log(
+      `[Complete] Fetched ${shiprocketSettlements.length} Shiprocket settlements`,
+    );
 
     // Step 3: Merge datasets
     console.log("[Complete] Step 3: Merging datasets...");
@@ -35,12 +39,17 @@ export const handleComplete: RequestHandler = async (req, res) => {
       shopifyOrders,
       shiprocketSettlements,
     );
+    console.log(
+      `[Complete] Generated ${reconciliationData.length} reconciliation rows`,
+    );
 
-    // Step 4: Write to Google Sheets
+    // Step 4: Write to Google Sheets (in parallel for speed)
     console.log("[Complete] Step 4: Writing to Google Sheets...");
-    await clearAndWriteSheet("Shopify_Orders", shopifyOrders);
-    await clearAndWriteSheet("Shiprocket_Settlements", shiprocketSettlements);
-    await clearAndWriteSheet("Reconciliation", reconciliationData);
+    await Promise.all([
+      clearAndWriteSheet("Shopify_Orders", shopifyOrders),
+      clearAndWriteSheet("Shiprocket_Settlements", shiprocketSettlements),
+      clearAndWriteSheet("Reconciliation", reconciliationData),
+    ]);
 
     const endTime = new Date();
     const duration = (endTime.getTime() - startTime) / 1000;

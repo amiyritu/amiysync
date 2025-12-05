@@ -7,6 +7,7 @@ import { handleReconcile } from "./routes/reconcile";
 import { handleShopifyPaginated } from "./routes/shopify-paginated";
 import { handleShiprocketPaginated } from "./routes/shiprocket-paginated";
 import { handleComplete } from "./routes/complete";
+import { handleDiagnostic } from "./routes/diagnostic";
 
 export function createServer() {
   const app = express();
@@ -34,6 +35,7 @@ export function createServer() {
   app.get("/api/demo", handleDemo);
   app.get("/api/health-check", handleHealthCheck);
   app.get("/api/reconcile", handleReconcile);
+  app.get("/api/diagnostic", handleDiagnostic);
 
   // Paginated reconciliation endpoints
   app.get("/api/reconcile/shopify", handleShopifyPaginated);
