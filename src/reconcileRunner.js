@@ -34,11 +34,23 @@ export async function runReconciliation() {
       shiprocketSettlements,
     );
 
-    // Step 4: Write to Google Sheets
-    console.log("[Reconciliation] Step 4: Writing to Google Sheets...");
+    // Step 4: Generate COD-specific reconciliation
+    console.log("[Reconciliation] Step 4: Generating COD-specific reconciliation...");
+    const codReconciliationData = generateCodReconciliation(
+      shopifyOrders,
+      shiprocketSettlements,
+    );
+
+    // Step 5: Write to Google Sheets
+    console.log("[Reconciliation] Step 5: Writing to Google Sheets...");
     await clearAndWriteSheet("Shopify_Orders", shopifyOrders);
     await clearAndWriteSheet("Shiprocket_Settlements", shiprocketSettlements);
     await clearAndWriteSheet("Reconciliation", reconciliationData);
+
+    // Write COD reconciliation with headers
+    const codHeaders = getCodReconciliationHeaders();
+    const codReconciliationWithHeaders = [...codHeaders, ...codReconciliationData];
+    await clearAndWriteSheet("COD_Orders_Settlement", codReconciliationWithHeaders);
 
     const endTime = new Date();
     const duration = (endTime - startTime) / 1000; // in seconds
