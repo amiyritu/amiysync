@@ -598,11 +598,12 @@ export default function Index() {
             </h3>
             <p className="text-slate-300 text-sm">
               All reconciliation results are written to a Google Sheet with
-              three tabs:
+              four tabs:
             </p>
             <ul className="text-slate-200 text-sm font-mono space-y-1 ml-4 mt-3 list-disc">
               <li>Shopify_Orders</li>
               <li>Shiprocket_Settlements</li>
+              <li>Shiprocket_Cuts</li>
               <li>Reconciliation</li>
             </ul>
           </div>
