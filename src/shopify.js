@@ -41,6 +41,13 @@ export async function getAllShopifyOrders() {
 
   try {
     while (hasNextPage) {
+      // Check if we're approaching the timeout
+      if (Date.now() - startTime > MAX_FETCH_TIME) {
+        console.log("[Shopify] Timeout approaching, stopping pagination");
+        hasNextPage = false;
+        break;
+      }
+
       const params = {
         limit: 250,
       };
