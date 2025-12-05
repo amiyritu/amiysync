@@ -278,6 +278,36 @@ export default function Index() {
           </div>
         </div>
 
+        {/* Development Notes */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-8 bg-slate-700 bg-opacity-50 border border-yellow-600 rounded-xl p-6 backdrop-blur-sm">
+            <h3 className="text-lg font-semibold text-yellow-300 mb-3">
+              Development Mode Notice
+            </h3>
+            <p className="text-slate-300 text-sm mb-3">
+              To test the reconciliation locally, use:{" "}
+              <span className="font-mono bg-slate-800 px-2 py-1 rounded">
+                netlify dev
+              </span>{" "}
+              instead of{" "}
+              <span className="font-mono bg-slate-800 px-2 py-1 rounded">
+                pnpm run dev
+              </span>
+            </p>
+            <p className="text-slate-300 text-sm">
+              Then configure environment variables in a{" "}
+              <span className="font-mono bg-slate-800 px-2 py-1 rounded">
+                .env
+              </span>{" "}
+              file (see{" "}
+              <span className="font-mono bg-slate-800 px-2 py-1 rounded">
+                .env.example
+              </span>
+              ).
+            </p>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="mt-12 text-center text-slate-400 text-sm">
           <p>
