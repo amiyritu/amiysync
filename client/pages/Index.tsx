@@ -14,6 +14,18 @@ export default function Index() {
     try {
       setIsLoading(true);
       const response = await fetch("/api/reconcile");
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(
+          "Invalid response: expected JSON, got " + (contentType || "unknown"),
+        );
+      }
+
       const data: ReconciliationResponse = await response.json();
       setReconciliationStatus(data);
       setLastUpdated(new Date());
@@ -23,9 +35,15 @@ export default function Index() {
       }
     } catch (error) {
       console.error("Error fetching reconciliation status:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to connect to reconciliation service. Make sure all environment variables are configured.";
+
       setReconciliationStatus({
         status: "error",
-        error: "Failed to connect to reconciliation service",
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
       });
     } finally {
       setIsLoading(false);
