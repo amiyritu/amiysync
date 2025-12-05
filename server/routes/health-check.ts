@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { runAllHealthChecks } from "../../src/healthChecks.js";
+import { runAllHealthChecks } from "../../src/healthChecks";
 
 export const handleHealthCheck: RequestHandler = async (req, res) => {
   try {
