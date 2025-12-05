@@ -152,19 +152,8 @@ export default function Index() {
       setReconcileError(null);
       resetProgressSteps();
 
-      // Step 1: Shopify orders
+      // Step 1: Main reconciliation (Merge and write)
       updateProgressStep(0, "in-progress");
-      await fetchShopifyPage(1);
-      updateProgressStep(0, "completed");
-
-      // Step 2: Shiprocket settlements
-      updateProgressStep(1, "in-progress");
-      await fetchShiprocketPage(1);
-      updateProgressStep(1, "completed");
-
-      // Step 3 & 4: Merge and write
-      updateProgressStep(2, "in-progress");
-      updateProgressStep(3, "in-progress");
 
       const response = await fetch("/api/reconcile/complete", {
         method: "POST",
@@ -180,8 +169,7 @@ export default function Index() {
       const data: CompleteReconciliationResponse = await response.json();
 
       if (data.status === "success") {
-        updateProgressStep(2, "completed");
-        updateProgressStep(3, "completed");
+        updateProgressStep(0, "completed");
         setReconciliationStatus({
           status: "success",
           timestamp: data.timestamp,
@@ -194,10 +182,35 @@ export default function Index() {
           setReconciliationStats(data.reconciliationStats);
         }
 
-        // Fetch Shiprocket cuts data
-        await fetchShiprocketCutsPage(1);
-
         setLastUpdated(new Date());
+
+        // Fetch data for display (non-blocking, happens after reconciliation succeeds)
+        updateProgressStep(1, "in-progress");
+        try {
+          await fetchShopifyPage(1);
+          updateProgressStep(1, "completed");
+        } catch (err) {
+          console.warn("Non-blocking: Failed to fetch Shopify data for display", err);
+          updateProgressStep(1, "completed");
+        }
+
+        updateProgressStep(2, "in-progress");
+        try {
+          await fetchShiprocketPage(1);
+          updateProgressStep(2, "completed");
+        } catch (err) {
+          console.warn("Non-blocking: Failed to fetch Shiprocket data for display", err);
+          updateProgressStep(2, "completed");
+        }
+
+        updateProgressStep(3, "in-progress");
+        try {
+          await fetchShiprocketCutsPage(1);
+          updateProgressStep(3, "completed");
+        } catch (err) {
+          console.warn("Non-blocking: Failed to fetch Shiprocket cuts for display", err);
+          updateProgressStep(3, "completed");
+        }
       } else {
         throw new Error(data.message || "Reconciliation failed");
       }
