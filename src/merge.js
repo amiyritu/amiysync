@@ -79,10 +79,11 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
   shopifyRows.forEach((orderRow) => {
     try {
       const orderIdString = String(orderRow[0]).trim(); // order_id (column 0)
-      const orderDate = orderRow[1] || ""; // order_date (column 1)
-      const paymentMethod = orderRow[3] || ""; // payment_method (column 3)
-      const codPrepaidStatus = orderRow[7] || "Unknown"; // cod_prepaid (column 7)
-      const shopifyTotal = parseFloat(orderRow[4]) || 0; // order_total (column 4)
+      const orderName = String(orderRow[1]).trim() || ""; // order_name (column 1)
+      const orderDate = orderRow[2] || ""; // order_date (column 2)
+      const paymentMethod = orderRow[4] || ""; // payment_method (column 4)
+      const codPrepaidStatus = orderRow[8] || "Unknown"; // cod_prepaid (column 8)
+      const shopifyTotal = parseFloat(orderRow[5]) || 0; // order_total (column 5)
 
       // Determine if this is a COD order
       const isCod =
@@ -95,8 +96,33 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         stats.prepaid++;
       }
 
-      // Look up settlement data
-      const settlement = shiprocketMap.get(orderIdString);
+      // Look up settlement data using dual-key matching with fallback logic
+      let settlement = null;
+      let matchMethod = "none";
+
+      // Strategy 1: Try to match by order_name (most reliable for human-readable matching)
+      if (orderName) {
+        settlement = shiprocketMapByName.get(orderName);
+        if (settlement) {
+          matchMethod = "name";
+        }
+      }
+
+      // Strategy 2: Fall back to order_id matching if name didn't work
+      if (!settlement && orderIdString) {
+        settlement = shiprocketMapById.get(orderIdString);
+        if (settlement) {
+          matchMethod = "id";
+        }
+      }
+
+      // Log matching strategy if settlement was found
+      if (settlement && matchMethod !== "none") {
+        console.log(
+          `[Merge] Order ${orderName || orderIdString} matched by ${matchMethod}`,
+        );
+      }
+
       const hasSettlement = !!settlement;
 
       // Extract settlement details if available
