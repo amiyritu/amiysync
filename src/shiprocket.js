@@ -405,22 +405,48 @@ export async function getRemittanceData() {
       );
 
       try {
-        const ordersResponse = await shiprocketGet("/v1/external/orders");
-
+        // Fetch all orders with pagination
         let orders = [];
-        if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
-          orders = ordersResponse.data;
-        } else if (
-          ordersResponse.data &&
-          Array.isArray(ordersResponse.data.results)
-        ) {
-          orders = ordersResponse.data.results;
-        } else if (Array.isArray(ordersResponse)) {
-          orders = ordersResponse;
+        let page = 1;
+        let hasMore = true;
+        const pageSize = 100;
+
+        while (hasMore) {
+          console.log(
+            `[Shiprocket] Fallback: Fetching orders page ${page} (size: ${pageSize})...`,
+          );
+          const ordersResponse = await shiprocketGet("/v1/external/orders", {
+            page,
+            per_page: pageSize,
+          });
+
+          let pageResults = [];
+          if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
+            pageResults = ordersResponse.data;
+          } else if (
+            ordersResponse.data &&
+            Array.isArray(ordersResponse.data.results)
+          ) {
+            pageResults = ordersResponse.data.results;
+          } else if (Array.isArray(ordersResponse)) {
+            pageResults = ordersResponse;
+          }
+
+          orders.push(...pageResults);
+          console.log(
+            `[Shiprocket] Fallback page ${page}: fetched ${pageResults.length} orders (total so far: ${orders.length})`,
+          );
+
+          // Check if there are more pages
+          if (pageResults.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
         }
 
         console.log(
-          `[Shiprocket] Fallback: Found ${orders.length} orders from orders endpoint`,
+          `[Shiprocket] Fallback: Total orders found: ${orders.length}`,
         );
 
         // Log sample order structure for debugging
