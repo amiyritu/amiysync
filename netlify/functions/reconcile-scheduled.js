@@ -1,9 +1,8 @@
 import { runReconciliation } from '../../src/reconcileRunner.js';
 
-/**
- * Scheduled function that runs every 6 hours
- * Cron schedule: 0 */6 * * * (every 6 hours)
- */
+// Scheduled function that runs every 6 hours
+// Cron schedule: 0 */6 * * * (every 6 hours at minute 0)
+
 export const config = {
   schedule: '0 */6 * * *',
 };
