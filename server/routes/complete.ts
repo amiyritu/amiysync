@@ -1,6 +1,9 @@
 import { RequestHandler } from "express";
 import { getAllShopifyOrders } from "../../src/shopify.js";
-import { getRemittanceData, calculatePerOrderCuts } from "../../src/shiprocket.js";
+import {
+  getRemittanceData,
+  calculatePerOrderCuts,
+} from "../../src/shiprocket.js";
 import { mergeDatasets } from "../../src/merge.js";
 import { clearAndWriteSheet } from "../../src/sheets.js";
 
@@ -46,13 +49,16 @@ export const handleComplete: RequestHandler = async (req, res) => {
     // Step 4: Calculate per-order Shiprocket cuts (optional, won't block main reconciliation if it times out)
     let shiprocketCuts: any[] = [];
     try {
-      console.log("[Complete] Step 4a: Calculating per-order Shiprocket cuts...");
+      console.log(
+        "[Complete] Step 4a: Calculating per-order Shiprocket cuts...",
+      );
       shiprocketCuts = await calculatePerOrderCuts();
       console.log(
         `[Complete] Calculated cuts for ${shiprocketCuts.length} shipments`,
       );
     } catch (cutsError) {
-      const cutsErrorMsg = cutsError instanceof Error ? cutsError.message : String(cutsError);
+      const cutsErrorMsg =
+        cutsError instanceof Error ? cutsError.message : String(cutsError);
       console.warn(
         `[Complete] Warning: Failed to calculate cuts (non-blocking): ${cutsErrorMsg}`,
       );

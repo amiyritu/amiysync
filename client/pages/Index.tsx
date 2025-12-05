@@ -158,7 +158,9 @@ export default function Index() {
         setShiprocketCutsTotalItems(data.totalItems);
       } else {
         console.error("Shiprocket Cuts API error:", data.message);
-        throw new Error(data.message || "Shiprocket Cuts API returned an error");
+        throw new Error(
+          data.message || "Shiprocket Cuts API returned an error",
+        );
       }
     } catch (error) {
       console.error("Error fetching Shiprocket Cuts page:", error);
@@ -213,7 +215,10 @@ export default function Index() {
           await fetchShopifyPage(1);
           updateProgressStep(1, "completed");
         } catch (err) {
-          console.warn("Non-blocking: Failed to fetch Shopify data for display", err);
+          console.warn(
+            "Non-blocking: Failed to fetch Shopify data for display",
+            err,
+          );
           updateProgressStep(1, "completed");
         }
 
@@ -222,7 +227,10 @@ export default function Index() {
           await fetchShiprocketPage(1);
           updateProgressStep(2, "completed");
         } catch (err) {
-          console.warn("Non-blocking: Failed to fetch Shiprocket data for display", err);
+          console.warn(
+            "Non-blocking: Failed to fetch Shiprocket data for display",
+            err,
+          );
           updateProgressStep(2, "completed");
         }
 
@@ -231,7 +239,10 @@ export default function Index() {
           await fetchShiprocketCutsPage(1);
           updateProgressStep(3, "completed");
         } catch (err) {
-          console.warn("Non-blocking: Failed to fetch Shiprocket cuts for display", err);
+          console.warn(
+            "Non-blocking: Failed to fetch Shiprocket cuts for display",
+            err,
+          );
           updateProgressStep(3, "completed");
         }
       } else {
