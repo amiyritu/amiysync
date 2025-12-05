@@ -23,3 +23,46 @@ export interface ReconciliationResponse {
   reconciledRows?: number;
   error?: string;
 }
+
+/**
+ * Response type for paginated Shopify endpoint (/api/reconcile/shopify?page=X)
+ */
+export interface PaginatedShopifyResponse {
+  status: "success" | "error";
+  items: any[];
+  page: number;
+  perPage: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  timestamp: string;
+  message?: string;
+}
+
+/**
+ * Response type for paginated Shiprocket endpoint (/api/reconcile/shiprocket?page=X)
+ */
+export interface PaginatedShiprocketResponse {
+  status: "success" | "error";
+  items: any[];
+  page: number;
+  perPage: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  timestamp: string;
+  message?: string;
+}
+
+/**
+ * Response type for merge and write endpoint (/api/reconcile/complete)
+ */
+export interface CompleteReconciliationResponse {
+  status: "success" | "error";
+  timestamp: string;
+  duration?: string;
+  shopifyOrders?: number;
+  shiprocketRows?: number;
+  reconciledRows?: number;
+  message?: string;
+}
