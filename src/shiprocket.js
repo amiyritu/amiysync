@@ -5,10 +5,6 @@ let cachedToken = null;
 
 const shiprocketBaseApi = axios.create({
   baseURL: "https://apiv2.shiprocket.in",
-  headers: {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-  },
 });
 
 export function getShiprocketConfig() {
