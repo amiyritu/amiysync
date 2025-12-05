@@ -301,7 +301,7 @@ async function getSettlementBatchDetails(batchId) {
 export async function getRemittanceData() {
   const settlements = [];
   const MAX_PAGES = 5; // Limit to prevent timeout
-  const MAX_WAIT_TIME = 23000; // 23 seconds max for all Shiprocket calls (buffer for handler)
+  const MAX_WAIT_TIME = 26000; // 26 seconds max for all Shiprocket calls (leaves 2s buffer for handler)
 
   try {
     console.log("[Shiprocket] Fetching remittance/settlement data...");
