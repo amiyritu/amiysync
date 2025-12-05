@@ -54,8 +54,8 @@ export async function checkShiprocketHealth() {
   try {
     getShiprocketConfig(); // Validate env vars exist
 
-    // Try to get settlements to verify auth works
-    const response = await shiprocketGet("/v1/external/settlements", {
+    // Try to get orders to verify auth works (orders endpoint is reliable for health checks)
+    const response = await shiprocketGet("/v1/external/orders", {
       limit: 1,
     });
 
@@ -67,20 +67,20 @@ export async function checkShiprocketHealth() {
     console.log("[Health] Shiprocket API response was undefined");
     return { status: false, message: "Empty response" };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("[Health] Shiprocket API check failed:", {
-      message: error.message,
-      stack: error.stack,
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    if (
-      error.message.includes("401") ||
-      error.message.includes("Unauthorized")
-    ) {
+    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
       return { status: false, message: "Invalid credentials" };
-    } else if (error.message.includes("timeout")) {
+    } else if (errorMessage.includes("timeout")) {
       return { status: false, message: "Request timeout" };
-    } else if (error.message.includes("ENOTFOUND")) {
+    } else if (errorMessage.includes("ENOTFOUND")) {
       return { status: false, message: "Network error" };
+    } else if (errorMessage.includes("HTTP")) {
+      return { status: false, message: "API error" };
     }
   }
 
