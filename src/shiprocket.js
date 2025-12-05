@@ -5,6 +5,7 @@ let cachedToken = null;
 
 const shiprocketBaseApi = axios.create({
   baseURL: "https://apiv2.shiprocket.in",
+  timeout: 15000, // 15 second timeout per request
 });
 
 export function getShiprocketConfig() {
@@ -294,11 +295,13 @@ async function getSettlementBatchDetails(batchId) {
 /**
  * Fetches remittance/settlement data from Shiprocket
  * Primary approach: fetches all settlement batches, then fetches detailed order data from each batch
- * Fallback: if settlements fail, tries orders endpoint
+ * Fallback: if settlements fail, tries orders endpoint with pagination limits
  * @returns {Promise<Array>} Array of settlement rows with per-order details
  */
 export async function getRemittanceData() {
   const settlements = [];
+  const MAX_PAGES = 5; // Limit to prevent timeout
+  const MAX_WAIT_TIME = 25000; // 25 seconds max for all Shiprocket calls
 
   try {
     console.log("[Shiprocket] Fetching remittance/settlement data...");
@@ -307,6 +310,7 @@ export async function getRemittanceData() {
     );
 
     let batches = [];
+    const startTime = Date.now();
 
     try {
       console.log(
@@ -318,7 +322,12 @@ export async function getRemittanceData() {
       let hasMore = true;
       const pageSize = 100;
 
-      while (hasMore) {
+      while (hasMore && page <= MAX_PAGES) {
+        if (Date.now() - startTime > MAX_WAIT_TIME) {
+          console.log("[Shiprocket] Timeout approaching, stopping batch fetch");
+          break;
+        }
+
         console.log(
           `[Shiprocket] Fetching settlement batches page ${page} (size: ${pageSize})...`,
         );
@@ -366,6 +375,13 @@ export async function getRemittanceData() {
       // Fetch details for each batch
       if (batches.length > 0) {
         for (const batch of batches) {
+          if (Date.now() - startTime > MAX_WAIT_TIME) {
+            console.log(
+              "[Shiprocket] Timeout approaching, stopping batch detail fetch",
+            );
+            break;
+          }
+
           const batchId = safeParseString(
             batch.id,
             batch.batch_id || batch.crf_id || "",
@@ -404,13 +420,21 @@ export async function getRemittanceData() {
       );
 
       try {
-        // Fetch all orders with pagination
+        // Fetch orders with pagination but with page limits to prevent timeout
         let orders = [];
         let page = 1;
         let hasMore = true;
         const pageSize = 100;
 
-        while (hasMore) {
+        while (hasMore && page <= MAX_PAGES) {
+          if (Date.now() - startTime > MAX_WAIT_TIME) {
+            console.log(
+              "[Shiprocket] Timeout approaching, stopping fallback fetch at page " +
+                page,
+            );
+            break;
+          }
+
           console.log(
             `[Shiprocket] Fallback: Fetching orders page ${page} (size: ${pageSize})...`,
           );
