@@ -35,7 +35,9 @@ export async function login() {
     const { email, password } = getShiprocketConfig();
 
     console.log("[Shiprocket] Attempting login...");
-    console.log("[Shiprocket] Login URL will be: https://apiv2.shiprocket.in/v1/external/auth/login");
+    console.log(
+      "[Shiprocket] Login URL will be: https://apiv2.shiprocket.in/v1/external/auth/login",
+    );
     const response = await shiprocketBaseApi.post("/v1/external/auth/login", {
       email,
       password,
@@ -48,11 +50,15 @@ export async function login() {
     console.error("[Shiprocket] Login failed:", error.message);
     console.error("[Shiprocket] Login error status:", error.response?.status);
     console.error("[Shiprocket] Login error headers:", error.response?.headers);
-    console.error("[Shiprocket] Login error response type:", typeof error.response?.data);
-    console.error("[Shiprocket] Login error response (first 500 chars):",
-      typeof error.response?.data === 'string'
+    console.error(
+      "[Shiprocket] Login error response type:",
+      typeof error.response?.data,
+    );
+    console.error(
+      "[Shiprocket] Login error response (first 500 chars):",
+      typeof error.response?.data === "string"
         ? error.response.data.substring(0, 500)
-        : JSON.stringify(error.response?.data).substring(0, 500)
+        : JSON.stringify(error.response?.data).substring(0, 500),
     );
     throw new Error(`Shiprocket login failed: ${error.message}`);
   }
