@@ -191,6 +191,10 @@ export default function Index() {
         if (data.reconciliationStats) {
           setReconciliationStats(data.reconciliationStats);
         }
+
+        // Fetch Shiprocket cuts data
+        await fetchShiprocketCutsPage(1);
+
         setLastUpdated(new Date());
       } else {
         throw new Error(data.message || "Reconciliation failed");
