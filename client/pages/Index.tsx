@@ -4,11 +4,13 @@ import {
   ReconciliationResponse,
   PaginatedShopifyResponse,
   PaginatedShiprocketResponse,
+  PaginatedShiprocketCutsResponse,
   CompleteReconciliationResponse,
 } from "@shared/api";
 import { ApiHealthCheck } from "../components/ApiHealthCheck";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { PaginatedResults } from "../components/PaginatedResults";
+import { ShiprocketCutsTable } from "../components/ShiprocketCutsTable";
 
 interface ProgressStep {
   label: string;
