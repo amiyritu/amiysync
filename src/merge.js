@@ -237,6 +237,7 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
         codCharges, // cod_charges
         adjustments, // adjustments
         rtoReversal, // rto_reversal
+        totalFreightCharge, // total_freight_charge
         remittanceDate, // remittance_date
         batchId, // batch_id
         "", // notes (empty for manual entry)
