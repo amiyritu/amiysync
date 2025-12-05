@@ -164,14 +164,20 @@ export async function getRemittanceData() {
       remittances = remittanceResponse.data || remittanceResponse || [];
       endpoint = "/v1/external/remittance";
     } catch (error1) {
-      console.log("[Shiprocket] Remittance endpoint failed, trying settlements...");
+      console.log(
+        "[Shiprocket] Remittance endpoint failed, trying settlements...",
+      );
       try {
         console.log("[Shiprocket] Trying /v1/external/settlements endpoint...");
-        const settlementResponse = await shiprocketGet("/v1/external/settlements");
+        const settlementResponse = await shiprocketGet(
+          "/v1/external/settlements",
+        );
         remittances = settlementResponse.data || settlementResponse || [];
         endpoint = "/v1/external/settlements";
       } catch (error2) {
-        console.log("[Shiprocket] Both endpoints failed, using orders fallback...");
+        console.log(
+          "[Shiprocket] Both endpoints failed, using orders fallback...",
+        );
         // Fallback to orders if both fail
         const ordersResponse = await shiprocketGet("/v1/external/orders");
         remittances = ordersResponse.data || ordersResponse || [];
@@ -184,7 +190,9 @@ export async function getRemittanceData() {
       remittances = remittances.results;
     }
 
-    console.log(`[Shiprocket] Using ${endpoint}, found ${remittances.length} entries`);
+    console.log(
+      `[Shiprocket] Using ${endpoint}, found ${remittances.length} entries`,
+    );
 
     // Map each entry to the Shiprocket_Settlements row format
     remittances.forEach((entry) => {
@@ -192,12 +200,17 @@ export async function getRemittanceData() {
         entry.order_id || entry.id || "", // order_id
         entry.awb || entry.tracking_number || entry.shipment_id || "", // awb
         parseFloat(entry.order_amount || entry.amount || entry.total || 0), // order_amount
-        parseFloat(entry.shipping_charges || entry.shipping_fee || entry.shipping || 0), // shipping_fee
+        parseFloat(
+          entry.shipping_charges || entry.shipping_fee || entry.shipping || 0,
+        ), // shipping_fee
         parseFloat(entry.cod_charges || entry.cod_fee || entry.cod || 0), // cod_fee
         parseFloat(entry.adjustments || 0), // adjustments
         parseFloat(entry.rto_reversal || entry.rto || 0), // rto_reversal
         parseFloat(entry.net_settlement || entry.net_amount || entry.net || 0), // net_remitted
-        entry.date || entry.remittance_date || entry.created_at || new Date().toISOString().split("T")[0], // remittance_date
+        entry.date ||
+          entry.remittance_date ||
+          entry.created_at ||
+          new Date().toISOString().split("T")[0], // remittance_date
         entry.crf_id || entry.batch_id || "", // crf_id
       ];
       settlements.push(row);
