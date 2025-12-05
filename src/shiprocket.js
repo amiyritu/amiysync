@@ -501,6 +501,15 @@ export async function getRemittanceData() {
               "",
             );
 
+            const shippingCharges = safeParseFloat(
+              order.shipping_charges || order.shipping || 0,
+              0,
+            );
+            const totalFreightCharge = safeParseFloat(
+              order.total_freight_charge || order.shipping_charges || order.shipping || 0,
+              shippingCharges,
+            );
+
             const row = [
               channelOrderId, // channel_order_id / shopify_order_id (primary match key)
               ute, // ute / last_mile_awb (secondary match key)
@@ -513,7 +522,7 @@ export async function getRemittanceData() {
                 order.order_amount || order.total || order.base_amount || 0,
                 0,
               ), // order_amount
-              safeParseFloat(order.shipping_charges || order.shipping || 0, 0), // shipping_charges
+              shippingCharges, // shipping_charges
               safeParseFloat(order.cod_charges || order.cod || 0, 0), // cod_charges
               safeParseFloat(order.adjustments || 0, 0), // adjustments
               safeParseFloat(order.rto_reversal || order.rto || 0, 0), // rto_reversal
@@ -525,6 +534,7 @@ export async function getRemittanceData() {
                 new Date().toISOString().split("T")[0],
               ), // remittance_date
               safeParseString(order.batch_id || order.crf_id || "", ""), // batch_id
+              totalFreightCharge, // total_freight_charge
             ];
             settlements.push(row);
           } catch (orderError) {
