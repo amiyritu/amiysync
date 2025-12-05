@@ -62,12 +62,14 @@ export async function runReconciliation() {
       shopifyOrders: shopifyOrders.length,
       shiprocketRows: shiprocketSettlements.length,
       reconciledRows: reconciliationData.length,
+      codOrders: codReconciliationData.length,
     };
 
     console.log(`\n[Reconciliation] Run completed successfully`);
     console.log(`  - Shopify Orders: ${summary.shopifyOrders}`);
     console.log(`  - Shiprocket Settlements: ${summary.shiprocketRows}`);
     console.log(`  - Reconciliation Rows: ${summary.reconciledRows}`);
+    console.log(`  - COD Orders with Settlement Data: ${summary.codOrders}`);
     console.log(`  - Duration: ${summary.duration}`);
     console.log(`${"=".repeat(60)}\n`);
 
