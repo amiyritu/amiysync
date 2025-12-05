@@ -13,7 +13,7 @@ export default function Index() {
     try {
       setIsLoading(true);
       const response = await fetch('/api/reconcile');
-      const data: ReconciliationStatus = await response.json();
+      const data: ReconciliationResponse = await response.json();
       setReconciliationStatus(data);
       setLastUpdated(new Date());
 
