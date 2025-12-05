@@ -36,6 +36,8 @@ export async function getAllShopifyOrders() {
   const orders = [];
   let hasNextPage = true;
   let pageInfo = null;
+  const MAX_FETCH_TIME = 23000; // 23 second limit to leave buffer for handler
+  const startTime = Date.now();
 
   try {
     while (hasNextPage) {
