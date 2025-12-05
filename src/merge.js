@@ -82,16 +82,16 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     `[Merge] Built Shiprocket settlement maps:`,
   );
   console.log(
-    `  - CEF IDs: ${shiprocketMapByCefId.size}`,
+    `  - Channel Order IDs (Shopify): ${shiprocketMapByCefId.size}`,
   );
   console.log(
-    `  - Order IDs: ${shiprocketMapByOrderId.size}`,
+    `  - Shiprocket Order IDs: ${shiprocketMapByOrderId.size}`,
   );
   console.log(
     `  - UTEs: ${shiprocketMapByUte.size}`,
   );
   console.log(
-    `[Merge] Matching strategy: CEF_ID → Order_ID → UTE → no match`,
+    `[Merge] Matching strategy: channel_order_id (Shopify) → shiprocket_order_id → ute → no match`,
   );
 
   // Reconcile each Shopify order with Shiprocket data
