@@ -54,6 +54,12 @@ export const handleComplete: RequestHandler = async (req, res) => {
     const endTime = new Date();
     const duration = (endTime.getTime() - startTime) / 1000;
 
+    // Calculate reconciliation statistics
+    const reconciledCount = reconciliationData.filter((row) => row[8] === "Reconciled").length;
+    const mismatchCount = reconciliationData.filter((row) => row[8] === "Mismatch").length;
+    const pendingCount = reconciliationData.filter((row) => row[8] === "Pending Remittance").length;
+    const prepaidCount = reconciliationData.filter((row) => row[8] === "Prepaid - No Remittance").length;
+
     const summary = {
       status: "success",
       timestamp: endTime.toISOString(),
@@ -61,12 +67,22 @@ export const handleComplete: RequestHandler = async (req, res) => {
       shopifyOrders: shopifyOrders.length,
       shiprocketRows: shiprocketSettlements.length,
       reconciledRows: reconciliationData.length,
+      reconciliationStats: {
+        reconciled: reconciledCount,
+        mismatch: mismatchCount,
+        pendingRemittance: pendingCount,
+        prepaidNoRemittance: prepaidCount,
+      },
     };
 
     console.log(`[Complete] Reconciliation completed successfully`);
     console.log(`  - Shopify Orders: ${summary.shopifyOrders}`);
     console.log(`  - Shiprocket Settlements: ${summary.shiprocketRows}`);
     console.log(`  - Reconciliation Rows: ${summary.reconciledRows}`);
+    console.log(`  - Reconciled: ${reconciledCount}`);
+    console.log(`  - Mismatches: ${mismatchCount}`);
+    console.log(`  - Pending Remittance: ${pendingCount}`);
+    console.log(`  - Prepaid (No Remittance): ${prepaidCount}`);
     console.log(`  - Duration: ${summary.duration}`);
 
     clearTimeout(timeoutHandle);
