@@ -151,15 +151,17 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
       let settlement = null;
       let matchMethod = "none";
 
-      // Strategy 1: Try to match by Shopify order_id against Shiprocket's channel_order_id
-      if (orderIdString) {
-        settlement = shiprocketMapByCefId.get(orderIdString);
+      // Strategy 1: Try to match Shopify order name (#3787) against Shiprocket's channel_order_id (3787)
+      // Strip the "#" prefix from Shopify order name for matching
+      const orderNameWithoutHash = orderName ? orderName.replace(/^#/, "").trim() : "";
+      if (orderNameWithoutHash) {
+        settlement = shiprocketMapByCefId.get(orderNameWithoutHash);
         if (settlement) {
           matchMethod = "channel_order_id";
         }
       }
 
-      // Strategy 2: Fall back to Shiprocket's internal order_id matching
+      // Strategy 2: Fall back to Shopify order_id matching against Shiprocket's internal order_id
       if (!settlement && orderIdString) {
         settlement = shiprocketMapByOrderId.get(orderIdString);
         if (settlement) {
