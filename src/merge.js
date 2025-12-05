@@ -37,34 +37,61 @@ export function mergeDatasets(shopifyRows, shiprocketRows) {
     `[Merge] Starting reconciliation with ${shopifyRows.length} Shopify orders and ${shiprocketRows.length} Shiprocket settlement rows`,
   );
 
-  // Build dual-key maps of Shiprocket settlements for flexible matching
-  // Key 1: By order_id (numeric ID)
-  const shiprocketMapById = new Map();
-  // Key 2: By order_name (human-readable name like "#1001")
-  const shiprocketMapByName = new Map();
+  // Build multi-key maps of Shiprocket settlements for flexible matching
+  // Key 1: By CEF_ID (Shiprocket's primary order identifier)
+  const shiprocketMapByCefId = new Map();
+  // Key 2: By Shopify order_id (numeric ID)
+  const shiprocketMapByOrderId = new Map();
+  // Key 3: By UTE (Shiprocket's secondary identifier)
+  const shiprocketMapByUte = new Map();
 
   shiprocketRows.forEach((row) => {
-    const orderId = String(row[0]).trim(); // order_id (column 0)
+    const cefId = String(row[0]).trim(); // cef_id (column 0)
+    const ute = String(row[1]).trim(); // ute (column 1)
+    const orderId = String(row[2]).trim(); // order_id (column 2)
+
+    if (cefId) {
+      if (shiprocketMapByCefId.has(cefId)) {
+        console.log(
+          `[Merge] Multiple settlements found for CEF ID ${cefId}, using most recent`,
+        );
+      }
+      shiprocketMapByCefId.set(cefId, row);
+    }
 
     if (orderId) {
-      // Log if we're replacing a previous entry
-      if (shiprocketMapById.has(orderId)) {
+      if (shiprocketMapByOrderId.has(orderId)) {
         console.log(
           `[Merge] Multiple settlements found for order ID ${orderId}, using most recent`,
         );
       }
-      shiprocketMapById.set(orderId, row);
+      shiprocketMapByOrderId.set(orderId, row);
+    }
+
+    if (ute) {
+      if (shiprocketMapByUte.has(ute)) {
+        console.log(
+          `[Merge] Multiple settlements found for UTE ${ute}, using most recent`,
+        );
+      }
+      shiprocketMapByUte.set(ute, row);
     }
   });
 
   console.log(
-    `[Merge] Built Shiprocket settlement ID map with ${shiprocketMapById.size} unique order IDs`,
+    `[Merge] Built Shiprocket settlement maps:`,
   );
   console.log(
-    `[Merge] Name-based matching ready if Shiprocket API provides order names`,
+    `  - CEF IDs: ${shiprocketMapByCefId.size}`,
   );
   console.log(
-    `[Merge] Fallback strategy: name → ID → no match`,
+    `  - Order IDs: ${shiprocketMapByOrderId.size}`,
+  );
+  console.log(
+    `  - UTEs: ${shiprocketMapByUte.size}`,
+  );
+  console.log(
+    `[Merge] Matching strategy: CEF_ID → Order_ID → UTE → no match`,
   );
 
   // Reconcile each Shopify order with Shiprocket data
