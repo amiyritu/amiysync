@@ -286,10 +286,10 @@ export default function Index() {
 
   const resetProgressSteps = () => {
     setProgressSteps([
-      { label: "Fetching Shopify orders", status: "pending" },
-      { label: "Fetching Shiprocket settlements", status: "pending" },
-      { label: "Merging datasets", status: "pending" },
-      { label: "Writing to Google Sheets", status: "pending" },
+      { label: "Running reconciliation", status: "pending" },
+      { label: "Loading Shopify Orders", status: "pending" },
+      { label: "Loading Shiprocket Settlements", status: "pending" },
+      { label: "Loading Shiprocket Cuts", status: "pending" },
     ]);
   };
 
