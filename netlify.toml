@@ -10,7 +10,6 @@
 [functions]
   node_bundler = "esbuild"
   directory = "netlify/functions"
-  timeout = 26
 
 [[redirects]]
   force = true
