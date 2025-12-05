@@ -101,7 +101,13 @@ export default function Index() {
   const fetchShiprocketPage = async (page: number) => {
     try {
       setShiprocketLoading(true);
-      const response = await fetch(`/api/reconcile/shiprocket?page=${page}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
+      const response = await fetch(`/api/reconcile/shiprocket?page=${page}`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -116,9 +122,11 @@ export default function Index() {
         setShiprocketTotalItems(data.totalItems);
       } else {
         console.error("Shiprocket API error:", data.message);
+        throw new Error(data.message || "Shiprocket API returned an error");
       }
     } catch (error) {
       console.error("Error fetching Shiprocket page:", error);
+      throw error;
     } finally {
       setShiprocketLoading(false);
     }
