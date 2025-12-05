@@ -88,13 +88,16 @@ export async function shiprocketGet(path, params = {}) {
 
   try {
     console.log(`[Shiprocket] GET ${path}`);
-    const response = await shiprocketBaseApi.get(path, {
-      params,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await axios.get(
+      `https://apiv2.shiprocket.in${path}`,
+      {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     return response.data;
   } catch (error) {
@@ -104,13 +107,16 @@ export async function shiprocketGet(path, params = {}) {
       token = await login();
 
       try {
-        const response = await shiprocketBaseApi.get(path, {
-          params,
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await axios.get(
+          `https://apiv2.shiprocket.in${path}`,
+          {
+            params,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
         return response.data;
       } catch (retryError) {
         console.error("[Shiprocket] Retry failed:", retryError.message);
