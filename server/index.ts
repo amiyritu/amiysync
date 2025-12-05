@@ -4,6 +4,9 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleHealthCheck } from "./routes/health-check";
 import { handleReconcile } from "./routes/reconcile";
+import { handleShopifyPaginated } from "./routes/shopify-paginated";
+import { handleShiprocketPaginated } from "./routes/shiprocket-paginated";
+import { handleComplete } from "./routes/complete";
 
 export function createServer() {
   const app = express();
@@ -31,6 +34,11 @@ export function createServer() {
   app.get("/api/demo", handleDemo);
   app.get("/api/health-check", handleHealthCheck);
   app.get("/api/reconcile", handleReconcile);
+
+  // Paginated reconciliation endpoints
+  app.get("/api/reconcile/shopify", handleShopifyPaginated);
+  app.get("/api/reconcile/shiprocket", handleShiprocketPaginated);
+  app.post("/api/reconcile/complete", handleComplete);
 
   return app;
 }
