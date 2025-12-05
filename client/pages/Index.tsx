@@ -15,6 +15,13 @@ interface ProgressStep {
   status: "pending" | "in-progress" | "completed" | "error";
 }
 
+interface ReconciliationStats {
+  reconciled: number;
+  mismatch: number;
+  pendingRemittance: number;
+  prepaidNoRemittance: number;
+}
+
 export default function Index() {
   const [reconciliationStatus, setReconciliationStatus] =
     useState<ReconciliationResponse | null>(null);
