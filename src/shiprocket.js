@@ -46,7 +46,8 @@ export async function login() {
           "Content-Type": "application/json",
           Accept: "application/json",
           "Accept-Encoding": "gzip, deflate, br",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         },
         timeout: 30000,
       },
@@ -96,20 +97,18 @@ export async function shiprocketGet(path, params = {}) {
 
   try {
     console.log(`[Shiprocket] GET ${path}`);
-    const response = await axios.get(
-      `https://apiv2.shiprocket.in${path}`,
-      {
-        params,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "Accept-Encoding": "gzip, deflate, br",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        },
-        timeout: 30000,
+    const response = await axios.get(`https://apiv2.shiprocket.in${path}`, {
+      params,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
-    );
+      timeout: 30000,
+    });
 
     return response.data;
   } catch (error) {
@@ -119,20 +118,18 @@ export async function shiprocketGet(path, params = {}) {
       token = await login();
 
       try {
-        const response = await axios.get(
-          `https://apiv2.shiprocket.in${path}`,
-          {
-            params,
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              "Accept-Encoding": "gzip, deflate, br",
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            },
-            timeout: 30000,
+        const response = await axios.get(`https://apiv2.shiprocket.in${path}`, {
+          params,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "Accept-Encoding": "gzip, deflate, br",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           },
-        );
+          timeout: 30000,
+        });
         return response.data;
       } catch (retryError) {
         console.error("[Shiprocket] Retry failed:", retryError.message);
@@ -362,7 +359,9 @@ export async function getRemittanceData() {
         }
       }
 
-      console.log(`[Shiprocket] Total settlement batch(es) found: ${batches.length}`);
+      console.log(
+        `[Shiprocket] Total settlement batch(es) found: ${batches.length}`,
+      );
 
       // Fetch details for each batch
       if (batches.length > 0) {
